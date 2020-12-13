@@ -38,6 +38,28 @@ class BplusTree:
         self.root = Node(order)
         self.root.check_leaf = True
 
+ # Insert operation
+    def insert(self, value, key):
+        value = str(value)
+        old_node = self.search(value)
+        old_node.insert_at_leaf(old_node, value, key)
+
+        if (len(old_node.values) == old_node.order):
+            node1 = Node(old_node.order)
+            node1.check_leaf = True
+            node1.parent = old_node.parent
+            mid = int(math.ceil(old_node.order / 2)) - 1
+            node1.values = old_node.values[mid + 1:]
+            node1.keys = old_node.keys[mid + 1:]
+            node1.nextKey = old_node.nextKey
+            old_node.values = old_node.values[:mid + 1]
+            old_node.keys = old_node.keys[:mid + 1]
+            old_node.nextKey = node1
+            self.insert_in_parent(old_node, node1.values[0], node1)
+
+    
+   
+
 
 bplustree = BplusTree(3)
 bplustree.insert('1', '1')
