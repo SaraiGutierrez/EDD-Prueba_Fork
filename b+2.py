@@ -49,6 +49,16 @@ class BplusTree:
                     return False
         return False
 
+    def nuevo2(self, value, key):
+        l = self.search(value)
+        for i, item in enumerate(l.values):
+            if item == value:
+                if key in l.keys[i]:
+                    return True
+                else:
+                    return False
+        return False
+
 bplustree = BplusTree(3)
 bplustree.insert('1', '1')
 bplustree.insert('2', '2')
