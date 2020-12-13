@@ -38,6 +38,25 @@ class BplusTree:
         self.root = Node(order)
         self.root.check_leaf = True
 
+
+# Search operation for different operations
+    def search(self, value):
+        current_node = self.root
+        while(current_node.check_leaf == False):
+            temp2 = current_node.values
+            for i in range(len(temp2)):
+                if (value == temp2[i]):
+                    current_node = current_node.keys[i + 1]
+                    break
+                elif (value < temp2[i]):
+                    current_node = current_node.keys[i]
+                    break
+                elif (i + 1 == len(current_node.values)):
+                    current_node = current_node.keys[i + 1]
+                    break
+        return current_node
+
+
 bplustree = BplusTree(3)
 bplustree.insert('1', '1')
 bplustree.insert('2', '2')
