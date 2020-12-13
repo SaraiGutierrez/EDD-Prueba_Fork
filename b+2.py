@@ -38,6 +38,7 @@ class BplusTree:
         self.root = Node(order)
         self.root.check_leaf = True
 
+
 bplustree = BplusTree(3)
 bplustree.insert('1', '1')
 bplustree.insert('2', '2')
