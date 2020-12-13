@@ -49,8 +49,6 @@ class BplusTree:
                     return False
         return False
 
-
-
 bplustree = BplusTree(3)
 bplustree.insert('1', '1')
 bplustree.insert('2', '2')
