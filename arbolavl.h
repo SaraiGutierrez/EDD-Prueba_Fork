@@ -33,4 +33,9 @@ protected:
     void ordenarNivelesParaReporte(ListaDobleCircular* list, NodoAVL* raiz);
 };
 
+private:
+NodoAVL* primero;
+NodoAVL* obtenerPrimero();
+};
+
 #endif // ARBOLAVL_H
