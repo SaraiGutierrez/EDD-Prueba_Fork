@@ -57,7 +57,22 @@ class BplusTree:
             old_node.nextKey = node1
             self.insert_in_parent(old_node, node1.values[0], node1)
 
-
+# Search operation for different operations
+    def search(self, value):
+        current_node = self.root
+        while(current_node.check_leaf == False):
+            temp2 = current_node.values
+            for i in range(len(temp2)):
+                if (value == temp2[i]):
+                    current_node = current_node.keys[i + 1]
+                    break
+                elif (value < temp2[i]):
+                    current_node = current_node.keys[i]
+                    break
+                elif (i + 1 == len(current_node.values)):
+                    current_node = current_node.keys[i + 1]
+                    break
+        return current_node
 
 
 
