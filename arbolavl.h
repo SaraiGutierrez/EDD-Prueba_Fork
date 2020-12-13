@@ -31,6 +31,20 @@ protected:
     string dot(NodoAVL* raiz);
     NodoAVL* factorEquilibrio(NodoAVL* raiz);
     void ordenarNivelesParaReporte(ListaDobleCircular* list, NodoAVL* raiz);
+
+
+
+
+
+
+};
+
+private:
+NodoAVL* primero;
+NodoAVL* obtenerPrimero();
+NodoAVL*segundo;
+NodoAVl*obtenersegundo());
 };
 
 #endif // ARBOLAVL_H
+
