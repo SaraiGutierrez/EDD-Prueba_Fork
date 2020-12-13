@@ -37,7 +37,16 @@ class BplusTree:
     def __init__(self, order):
         self.root = Node(order)
         self.root.check_leaf = True
-
+# Find the node
+    def find(self, value, key):
+        l = self.search(value)
+        for i, item in enumerate(l.values):
+            if item == value:
+                if key in l.keys[i]:
+                    return True
+                else:
+                    return False
+        return False
 
 bplustree = BplusTree(3)
 bplustree.insert('1', '1')
