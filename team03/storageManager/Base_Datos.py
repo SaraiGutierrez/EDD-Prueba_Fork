@@ -1,7 +1,9 @@
+from storageManager.Arbol_AVL import Arbol_AVL
+
 class Base_Datos:
     def __init__(self, nombre):
         self.nombre = nombre
-        self.estructura = None
+        self.estructura = Arbol_AVL()
 
     def getNombreASCII(self):
         number = 0

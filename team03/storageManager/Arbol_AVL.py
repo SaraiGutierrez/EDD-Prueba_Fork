@@ -58,9 +58,9 @@ class Arbol_AVL:
         if not nodo:
             return Nodo_AVL(obj)
         
-        if obj.nombre < nodo.objeto.nombre:
+        if obj.getNombreASCII() < nodo.objeto.getNombreASCII():
             nodo.izquierda = self.__insertarObjeto(nodo.izquierda, obj)
-        elif obj.nombre > nodo.objeto.nombre:
+        elif obj.getNombreASCII() > nodo.objeto.getNombreASCII():
             nodo.derecha = self.__insertarObjeto(nodo.derecha, obj)
         else:
             #Nodos iguales no son permitidos
@@ -82,7 +82,7 @@ class Arbol_AVL:
         #    /n
         #   /n
         #  /nodonuevo
-        if balance > 1 and obj.nombre < nodo.izquierda.objeto.nombre:
+        if balance > 1 and obj.getNombreASCII() < nodo.izquierda.objeto.getNombreASCII():
             return self.__rotarDerecha(nodo)
 
         #Caso rotacion simple -> derecha derecha
@@ -90,7 +90,7 @@ class Arbol_AVL:
         #  \n
         #   \n
         #    \nodonuevo
-        if balance < -1 and obj.nombre > nodo.derecha.objeto.nombre:
+        if balance < -1 and obj.getNombreASCII() > nodo.derecha.objeto.getNombreASCII():
             return self.__rotarIzquierda(nodo)
 
         #Caso rotacion doble -> izquierda derecha
@@ -98,7 +98,7 @@ class Arbol_AVL:
         #   /n
         #  /n
         #   \\nodonuevo
-        if balance > 1 and obj.nombre > nodo.izquierda.objeto.nombre:
+        if balance > 1 and obj.getNombreASCII() > nodo.izquierda.objeto.getNombreASCII():
             nodo.izquierda = self.__rotarIzquierda(nodo.izquierda)
             return self.__rotarDerecha(nodo)
 
@@ -107,7 +107,7 @@ class Arbol_AVL:
         #  \n
         #   \n
         #  /nodonuevo
-        if balance < -1 and obj.nombre < nodo.derecha.objeto.nombre:
+        if balance < -1 and obj.getNombreASCII() < nodo.derecha.objeto.getNombreASCII():
             nodo.derecha = self.__rotarDerecha(nodo.derecha)
             return self.__rotarIzquierda(nodo)
 
@@ -122,22 +122,22 @@ class Arbol_AVL:
         
         return actual
 
-    def eliminar(self, nombre):
-        self.root = self.__eliminarObjeto(self.root, nombre)
+    def eliminar(self, objeto):
+        self.root = self.__eliminarObjeto(self.root, objeto)
 
-    def __eliminarObjeto(self, nodo, nombre):
+    def __eliminarObjeto(self, nodo, obj):
         #Retornar None si no hay nodos
         if not nodo:
             return nodo
 
         #Si el identificador que será eliminado es menor que el
         #identificador de la raiz, entonces se busca hacia la izquierda
-        if nombre < nodo.objeto.nombre:
-            nodo.izquierda = self.__eliminarObjeto(nodo.izquierda, nombre)
-        elif nombre > nodo.objeto.nombre:#Identificador a eliminar es mayor al del nodo, se busca hacia la derecha
-            nodo.derecha = self.__eliminarObjeto(nodo.derecha, nombre)
+        if obj.getNombreASCII() < nodo.objeto.getNombreASCII():
+            nodo.izquierda = self.__eliminarObjeto(nodo.izquierda, obj)
+        elif obj.getNombreASCII() > nodo.objeto.getNombreASCII():#Identificador a eliminar es mayor al del nodo, se busca hacia la derecha
+            nodo.derecha = self.__eliminarObjeto(nodo.derecha, obj)
         else:#Encontro el identificador. Validacion si es el mismo identificador pero no el mismo nombre
-            if nombre == nodo.objeto.nombre:
+            if obj.nombre == nodo.objeto.nombre:
                 #Nodo con solo un hijo o sin hijos
                 if nodo.izquierda is None:
                     temp = nodo.derecha
@@ -153,12 +153,12 @@ class Arbol_AVL:
 
                 #Copiar los datos del sucesor a nodo
                 nodo.objeto.nombre = temp.objeto.nombre
-                nodo.objeto.objeto = temp.objeto.objeto
+                nodo.objeto.estructura = temp.objeto.estructura
 
                 #Eliminar el sucesor
                 nodo.derecha = self.__eliminarObjeto(nodo.derecha, temp.objeto)
             else:#Si el nombre no es el mismo sigue buscando hacia la derecha
-                nodo.derecha = self.__eliminarObjeto(nodo.derecha, nombre)
+                nodo.derecha = self.__eliminarObjeto(nodo.derecha, obj)
 
         #Si el arbol se quedo vacio
         if nodo is None:
@@ -213,23 +213,24 @@ class Arbol_AVL:
         #Se retorna el nodo sin cambios
         return nodo
 
-    def buscarObjeto(self, old):
-        buscado = self.__buscarObjeto(self.root, old)
+    # Retorna el nodo donde se encuentra el objeto buscado
+    def buscarObjeto(self, id, old):
+        buscado = self.__buscarObjeto(self.root, id, old)
         return buscado
     
-    def __buscarObjeto(self, raiz, oldName):
+    def __buscarObjeto(self, raiz, id, oldName):
         if not raiz:
             return raiz
-        elif oldName < raiz.objeto.nombre:
-            raiz = self.__buscarObjeto(raiz.izquierda, oldName)
-        elif oldName > raiz.objeto.nombre:
-            raiz = self.__buscarObjeto(raiz.derecha, oldName)
+        elif id < raiz.objeto.getNombreASCII():
+            raiz = self.__buscarObjeto(raiz.izquierda, id, oldName)
+        elif id > raiz.objeto.getNombreASCII():
+            raiz = self.__buscarObjeto(raiz.derecha, id, oldName)
         else:
             #Comprobar por nombre la base de datos
             if oldName == raiz.objeto.nombre:
                 '''Solo retorna la raiz'''
             else:
-                raiz = self.__buscarObjeto(raiz.derecha, oldName)
+                raiz = self.__buscarObjeto(raiz.derecha, id, oldName)
         return raiz
 
     def __dot(self, raiz):
@@ -277,11 +278,18 @@ class Arbol_AVL:
 
         #os.system('dot -Tpng Tablas.dot -o Tablas.png')
 
-    def imprimirInOrden(self, raiz):
+    def getListaNombres(self):
+        lista = []
+        self.imprimirInOrden(self.root, lista)
+        
+        return lista
+
+    def imprimirInOrden(self, raiz, lista):
         if raiz != None:
-            self.imprimirInOrden(raiz.izquierda)
-            print(raiz.objeto.nombre, " ", str(raiz.objeto.getNombreASCII()))
-            self.imprimirInOrden(raiz.derecha)
+            self.imprimirInOrden(raiz.izquierda, lista)
+            #print(raiz.objeto.nombre, " ", str(raiz.objeto.getNombreASCII()))
+            lista.append(raiz.objeto.nombre)
+            self.imprimirInOrden(raiz.derecha, lista)
 
     def imprimirPreOrden(self, raiz):
         if raiz != None:

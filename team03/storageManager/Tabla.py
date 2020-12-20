@@ -1,7 +1,10 @@
+from storageManager.arbolbplus import ArbolBmas
+
 class Tabla:
-    def __init__(self, nombre):
+    def __init__(self, nombre, columnas):
         self.nombre = nombre
-        self.estructura = None
+        self.columnas = columnas
+        self.estructura = ArbolBmas()
 
     def getNombreASCII(self):
         number = 0

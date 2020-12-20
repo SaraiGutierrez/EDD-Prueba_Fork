@@ -3,8 +3,6 @@
 # Notice:       Copyright (c) 2020 TytusDB Team
 # Developer:    Herberth Avila
 
-#import sys
-#sys.path.append('./storageManager')
 from storageManager.BPlusServer import BPlusServer
 
 server = BPlusServer()
@@ -22,6 +20,9 @@ def createDatabase(database: str) -> int:
         #data = read(dataPath)
         #if database in data:
             #return 2
+        existe = server.existeDB(database)
+        if existe:
+            return 2
         server.createDB(database)
         ##data.update(new)
         ##write(dataPath, data)
@@ -37,7 +38,7 @@ def showDatabases() -> list:
         #data = read(dataPath)
         #for d in data:
             #databases.append(d)
-        server.showDB()
+        databases = server.showDB()
         return databases
     except:
         return []
@@ -56,6 +57,12 @@ def alterDatabase(databaseOld: str, databaseNew) -> int:
         #data[databaseNew] = data[databaseOld]
         #data.pop(databaseOld)
         #write(dataPath, data)
+        existe = server.existeDB(databaseOld)
+        if existe is False:
+            return 2
+        existe = server.existeDB(databaseNew)
+        if existe:
+            return 3
         server.alterDB(databaseOld, databaseNew)
         return 0
     except:
@@ -72,6 +79,9 @@ def dropDatabase(database: str) -> int:
             #return 2
         #data.pop(database)
         #write(dataPath, data)
+        existe = server.existeDB(database)
+        if existe is False:
+            return 2
         server.dropDB(database)
         return 0
     except:
@@ -81,7 +91,7 @@ def dropDatabase(database: str) -> int:
 ###############
 # Tables CRUD #
 ###############
-'''
+
 # CREATE a table checking their existence
 def createTable(database: str, table: str, numberColumns: int) -> int:
     try:
@@ -89,17 +99,24 @@ def createTable(database: str, table: str, numberColumns: int) -> int:
         or not table.isidentifier() \
         or not isinstance(numberColumns, int):
             raise Exception()
-        initCheck()
-        data = read(dataPath)
-        if not database in data:
-            return 2        
-        if table in data[database]:
+        #initCheck()
+        #data = read(dataPath)
+        #if not database in data:
+            #return 2        
+        #if table in data[database]:
+            #return 3
+        #new = {table:{"NCOL":numberColumns}}
+        #data[database].update(new)
+        #write(dataPath, data)
+        #dataTable = {}
+        #write(path+database+'-'+table, dataTable)
+        existe = server.existeDB(database)
+        if existe is False:
+            return 2
+        existe = server.existeTabla(database, table)
+        if existe:
             return 3
-        new = {table:{"NCOL":numberColumns}}
-        data[database].update(new)
-        write(dataPath, data)
-        dataTable = {}
-        write(path+database+'-'+table, dataTable)
+        server.createT(database, table, numberColumns)
         return 0
     except:
         return 1
@@ -107,13 +124,19 @@ def createTable(database: str, table: str, numberColumns: int) -> int:
 # show databases by constructing a list
 def showTables(database: str) -> list:
     try:
-        initCheck()
+        if not database.isidentifier():
+            raise Exception()
+        #initCheck()
         tables = []        
-        data = read(dataPath)
-        if not database in data:
+        #data = read(dataPath)
+        #if not database in data:
+            #return None
+        #for d in data[database]:
+            #tables.append(d);
+        existe = server.existeDB(database)
+        if existe is False:
             return None
-        for d in data[database]:
-            tables.append(d);
+        tables = server.showT(database)
         return tables
     except:
         return []
@@ -121,38 +144,59 @@ def showTables(database: str) -> list:
 # extract all register of a table
 def extractTable(database: str, table: str) -> list:
     try:
-        initCheck()
+        #initCheck()
         rows = []
-        data = read(dataPath)
-        if not database in data:
+        #data = read(dataPath)
+        #if not database in data:
+            #return None
+        #if table not in data[database]:
+            #return None
+        #data = read(path+database+'-'+table)
+        #for d in data:
+            #rows.append(data[d]);
+        existe = server.existeDB(database)
+        if existe is False:
             return None
-        if table not in data[database]:
+        existe = server.existeTabla(database, table)
+        if existe is False:
             return None
-        data = read(path+database+'-'+table)
-        for d in data:
-            rows.append(data[d]);
+        rows = server.extractT(database, table)
         return rows
     except:
         return None
 
-# extract a range registers of a table
-def extractRangeTable(database: str, table: str, lower: any, upper: any) -> list:
-    initCheck()
-    rows = []
-    with open('data/json/databases') as file:
-        data = json.load(file)
-        if not database in data:
-            return rows
-        else: 
-            if table not in data[database]:
-                return rows
-    with open('data/json/'+database+'-'+table) as file:
-        data = json.load(file)
-        for d in data:
-            if (str(d)<=str(upper) and str(d)>=str(lower)):
-                rows.append(data[d]);
-    return rows
 
+# extract a range registers of a table
+def extractRangeTable(database: str, table: str, columnNumber: int, lower: any, upper: any) -> list:
+    #initCheck()
+    #rows = []
+    #with open('data/json/databases') as file:
+        #data = json.load(file)
+        #if not database in data:
+            #return rows
+        #else: 
+            #if table not in data[database]:
+                #return rows
+    #with open('data/json/'+database+'-'+table) as file:
+        #data = json.load(file)
+        #for d in data:
+            #if (str(d)<=str(upper) and str(d)>=str(lower)):
+                #rows.append(data[d])
+    #return rows
+    try:
+        rows = []
+
+        existe = server.existeDB(database)
+        if existe is False:
+            return None
+        existe = server.existeTabla(database, table)
+        if existe is False:
+            return None
+        rows = server.extractRangeT(database, table, columnNumber, lower, upper)
+        return rows
+    except:
+        return None
+'''
 # Add a PK list to specific table and database
 def alterAddPK(database: str, table: str, columns: list) -> int:
     try:
@@ -202,7 +246,7 @@ def alterDropPK(database: str, table: str) -> int:
     else:
         return 1  
 
-
+'''
 # Rename a table name by inserting new_key and deleting old_key
 def alterTable(database: str, tableOld: str, tableNew: str) -> int:
     try:
@@ -210,21 +254,31 @@ def alterTable(database: str, tableOld: str, tableNew: str) -> int:
         or not tableOld.isidentifier() \
         or not tableNew.isidentifier() :
             raise Exception()        
-        initCheck()
-        data = read(dataPath)
-        if not database in data:
+        #initCheck()
+        #data = read(dataPath)
+        #if not database in data:
+            #return 2
+        #if not tableOld in data[database]:
+            #return 3
+        #if tableNew in data[database]:
+            #return 4            
+        #data[database][tableNew] = data[database][tableOld]
+        #data[database].pop(tableOld)
+        #write(dataPath, data)
+        existe = server.existeDB(database)
+        if existe is False:
             return 2
-        if not tableOld in data[database]:
+        existe = server.existeTabla(database, tableOld)
+        if existe is False:
             return 3
-        if tableNew in data[database]:
-            return 4            
-        data[database][tableNew] = data[database][tableOld]
-        data[database].pop(tableOld)
-        write(dataPath, data)
+        existe = server.existeTabla(database, tableNew)
+        if existe:
+            return 4
+        server.alterT(database, tableOld, tableNew)
         return 0
     except:
         return 1   
-
+'''
 # add a column at the end of register with default value
 def alterAddColumn(database: str, table: str, default: any) -> int:
     initCheck()
@@ -286,21 +340,28 @@ def alterDropColumn(database: str, table: str, columnNumber: int) -> int:
         return 0
     else:
         return 1  
-        
+'''        
 # Delete a table name by inserting new_key and deleting old_key
 def dropTable(database: str, table: str) -> int:
     try:
         if not database.isidentifier() \
         or not table.isidentifier() :
             raise Exception()             
-        initCheck()
-        data = read(dataPath)
-        if not database in data:
+        #initCheck()
+        #data = read(dataPath)
+        #if not database in data:
+            #return 2
+        #if not table in data[database]:
+            #return 3
+        #data[database].pop(table)
+        #write(dataPath,data)
+        existe = server.existeDB(database)
+        if existe is False:
             return 2
-        if not table in data[database]:
+        existe = server.existeTabla(database, table)
+        if existe is False:
             return 3
-        data[database].pop(table)
-        write(dataPath,data)
+        server.dropT(database, table)
         return 0
     except:
         return 1  
@@ -316,36 +377,46 @@ def insert(database: str, table: str, register: list) -> int:
         or not table.isidentifier() \
         or not isinstance(register, list):
             raise Exception()        
-        initCheck()
-        hide = False
-        ncol = None
-        pkey = None
-        pk = ""
-        data = read(dataPath)
-        if not database in data:
-            return 2
-        if table not in data[database]:
-            return 3
-        if len(register)!=data[database][table]["NCOL"]:
-            return 5
-        if "PKEY" not in data[database][table]:
+        #initCheck()
+        #hide = False
+        #ncol = None
+        #pkey = None
+        #pk = ""
+        #data = read(dataPath)
+        #if not database in data:
+            #return 2
+        #if table not in data[database]:
+            #return 3
+        #if len(register)!=data[database][table]["NCOL"]:
+            #return 5
+        #if "PKEY" not in data[database][table]:
             # hidden pk
-            hide = True
-        else:
+            #hide = True
+        #else:
             # defined pk
-            pkey = data[database][table]["PKEY"]
-            ncol = data[database][table]["NCOL"]
-        data = read(path+database+'-'+table)
-        if hide:
-            pk = len(data)
-        else:
-            for i in pkey:
-                pk += str(register[i])+'|'
-        if pk in data:
-            return 4
-        new = {pk:register}
-        data.update(new)
-        write(path+database+'-'+table, data)
+            #pkey = data[database][table]["PKEY"]
+            #ncol = data[database][table]["NCOL"]
+        #data = read(path+database+'-'+table)
+        #if hide:
+            #pk = len(data)
+        #else:
+            #for i in pkey:
+                #pk += str(register[i])+'|'
+        #if pk in data:
+            #return 4
+        #new = {pk:register}
+        #data.update(new)
+        #write(path+database+'-'+table, data)
+        existe = server.existeDB(database)
+        if existe is False:
+            return 2
+        existe = server.existeTabla(database, table)
+        if existe is False:
+            return 3
+        '''
+        4 llave primaria duplicada, 5 columnas fuera de límites.
+        '''
+        server.insert(database, table, register)
         return 0
     except:
         return 1
@@ -354,152 +425,219 @@ def insert(database: str, table: str, register: list) -> int:
 def loadCSV(filepath: str, database: str, table: str) -> list:
     try:
         res = []
-        import csv
-        with open(filepath, 'r') as file:
-            reader = csv.reader(file, delimiter = ',')
-            for row in reader:
-                res.append(insert(database,table,row))
+        #import csv
+        #with open(filepath, 'r') as file:
+            #reader = csv.reader(file, delimiter = ',')
+            #for row in reader:
+                #res.append(insert(database,table,row))
+        res = server.cargarCSV(filepath, database, table)
         return res
     except:
         return []
 
 # READ or extract a register
 def extractRow(database: str, table: str, columns: list) -> list:
-    initCheck()
-    hide = False
-    ncol = None
-    pkey = None
-    pk = ""
-    with open('data/json/databases') as file:
-        data = json.load(file)
-        if not database in data:
+    try:
+        res = []
+        
+        existe = server.existeDB(database)
+        if existe is False:
             return []
-        else: 
-            if table not in data[database]:
-                return []
-            if "PKEY" not in data[database][table]:
+        existe = server.existeTabla(database, table)
+        if existe is False:
+            return []
+        res = server.extractR(database, table, columns)
+        return res
+    except:
+        return []
+
+    #initCheck()
+    #hide = False
+    #ncol = None
+    #pkey = None
+    #pk = ""
+    #with open('data/json/databases') as file:
+        #data = json.load(file)
+        #if not database in data:
+            #return []
+        #else: 
+            #if table not in data[database]:
+                #return []
+            #if "PKEY" not in data[database][table]:
                 # hidden pk
-                hide = True
-            else:
+                #hide = True
+            #else:
                 # defined pk
-                pkey = data[database][table]["PKEY"]            
-    with open('data/json/'+database+'-'+table) as file:
-        data = json.load(file)
-        if hide:
-            pk = columns[0]
-        else:
-            for i in pkey:
-                pk += str(columns[i])
-        if not pk in data:
-            return []
-        else:
-            return data[pk]
+                #pkey = data[database][table]["PKEY"]            
+    #with open('data/json/'+database+'-'+table) as file:
+        #data = json.load(file)
+        #if hide:
+            #pk = columns[0]
+        #else:
+            #for i in pkey:
+                #pk += str(columns[i])
+        #if not pk in data:
+            #return []
+        #else:
+            #return data[pk]
 
 # UPDATE a register
 def update(database: str, table: str, register: dict, columns: list) -> int:
-    initCheck()
-    dump = False
-    hide = False
-    ncol = None
-    pkey = None
-    pk = ""
-    with open('data/json/databases') as file:
-        data = json.load(file)
-        if not database in data:
+    try:
+        if not database.isidentifier() \
+        or not table.isidentifier():
+            raise Exception()        
+        
+        existe = server.existeDB(database)
+        if existe is False:
             return 2
-        else: 
-            if table not in data[database]:
-                return 3
-            if "PKEY" not in data[database][table]:
-                # hidden pk
-                hide = True
-            else:
-                # defined pk
-                pkey = data[database][table]["PKEY"]            
-    with open('data/json/'+database+'-'+table) as file:
-        data = json.load(file)
-        if hide:
-            pk = columns[0]
-        else:
-            for i in pkey:
-                pk += str(columns[i])
-        if not pk in data:
-            return 4
-        else:            
-            for key in register:
-                data[pk][key] = register[key]
-        dump = True
-    if dump:
-        with open('data/json/'+database+'-'+table, 'w') as file:
-            json.dump(data, file)
+        existe = server.existeTabla(database, table)
+        if existe is False:
+            return 3
+        '''
+        4 llave primaria no existe.
+        '''
+        server.actualizarDatos(database, table, register, columns)
         return 0
-    else:
+    except:
         return 1
+    
+    #initCheck()
+    #dump = False
+    #hide = False
+    #ncol = None
+    #pkey = None
+    #pk = ""
+    #with open('data/json/databases') as file:
+        #data = json.load(file)
+        #if not database in data:
+            #return 2
+        #else: 
+            #if table not in data[database]:
+                #return 3
+            #if "PKEY" not in data[database][table]:
+                # hidden pk
+                #hide = True
+            #else:
+                # defined pk
+                #pkey = data[database][table]["PKEY"]            
+    #with open('data/json/'+database+'-'+table) as file:
+        #data = json.load(file)
+        #if hide:
+            #pk = columns[0]
+        #else:
+            #for i in pkey:
+                #pk += str(columns[i])
+        #if not pk in data:
+            #return 4
+        #else:            
+            #for key in register:
+                #data[pk][key] = register[key]
+        #dump = True
+    #if dump:
+        #with open('data/json/'+database+'-'+table, 'w') as file:
+            #json.dump(data, file)
+        #return 0
+    #else:
+        #return 1
 
 # DELETE a specific register
 def delete(database: str, table: str, columns: list) -> int:
-    initCheck()
-    dump = False
-    hide = False
-    ncol = None
-    pkey = None
-    pk = ""
-    with open('data/json/databases') as file:
-        data = json.load(file)
-        if not database in data:
+    try:
+        if not database.isidentifier() \
+        or not table.isidentifier():
+            raise Exception()        
+        
+        existe = server.existeDB(database)
+        if existe is False:
             return 2
-        else: 
-            if table not in data[database]:
-                return 3
-            if "PKEY" not in data[database][table]:
-                # hidden pk
-                hide = True
-            else:
-                # defined pk
-                pkey = data[database][table]["PKEY"]            
-    with open('data/json/'+database+'-'+table) as file:
-        data = json.load(file)
-        if hide:
-            pk = columns[0]
-        else:
-            for i in pkey:
-                pk += str(columns[i])
-        if not pk in data:
-            return 4
-        else:
-            data.pop(pk)
-        dump = True
-    if dump:
-        with open('data/json/'+database+'-'+table, 'w') as file:
-            json.dump(data, file)
+        existe = server.existeTabla(database, table)
+        if existe is False:
+            return 3
+        '''
+        4 llave primaria no existe.
+        '''
+        server.eliminarRegistro(database, table, columns)
         return 0
-    else:
+    except:
         return 1
+    #initCheck()
+    #dump = False
+    #hide = False
+    #ncol = None
+    #pkey = None
+    #pk = ""
+    #with open('data/json/databases') as file:
+        #data = json.load(file)
+        #if not database in data:
+            #return 2
+        #else: 
+            #if table not in data[database]:
+                #return 3
+            #if "PKEY" not in data[database][table]:
+                # hidden pk
+                #hide = True
+            #else:
+                # defined pk
+                #pkey = data[database][table]["PKEY"]            
+    #with open('data/json/'+database+'-'+table) as file:
+        #data = json.load(file)
+        #if hide:
+            #pk = columns[0]
+        #else:
+            #for i in pkey:
+                #pk += str(columns[i])
+        #if not pk in data:
+            #return 4
+        #else:
+            #data.pop(pk)
+        #dump = True
+    #if dump:
+        #with open('data/json/'+database+'-'+table, 'w') as file:
+            #json.dump(data, file)
+        #return 0
+    #else:
+        #return 1
 
 # DELETE or truncate all registers of the table
 def truncate(database: str, table: str) -> int:
-    initCheck()
-    dump = False
-    hide = False
-    ncol = None
-    pkey = None
-    pk = ""
-    with open('data/json/databases') as file:
-        data = json.load(file)
-        if not database in data:
+    try:
+        if not database.isidentifier() \
+        or not table.isidentifier() :
+            raise Exception()             
+        
+        existe = server.existeDB(database)
+        if existe is False:
             return 2
-        else: 
-            if table not in data[database]:
-                return 3
-        dump = True
-    if dump:
-        data = {}
-        with open('data/json/'+database+'-'+table, 'w') as file:
-            json.dump(data, file)
-            return 0
-    else:
+        existe = server.existeTabla(database, table)
+        if existe is False:
+            return 3
+        server.truncateT(database, table)
+        return 0
+    except:
         return 1
-
+    #initCheck()
+    #dump = False
+    #hide = False
+    #ncol = None
+    #pkey = None
+    #pk = ""
+    #with open('data/json/databases') as file:
+        #data = json.load(file)
+        #if not database in data:
+            #return 2
+        #else: 
+            #if table not in data[database]:
+                #return 3
+        #dump = True
+    #if dump:
+        #data = {}
+        #with open('data/json/'+database+'-'+table, 'w') as file:
+            #json.dump(data, file)
+            #return 0
+    #else:
+        #return 1
+'''
 #############
 # Utilities #
 #############
