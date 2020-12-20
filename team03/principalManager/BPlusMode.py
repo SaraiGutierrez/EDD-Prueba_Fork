@@ -278,69 +278,69 @@ def alterTable(database: str, tableOld: str, tableNew: str) -> int:
         return 0
     except:
         return 1   
-'''
+
 # add a column at the end of register with default value
 def alterAddColumn(database: str, table: str, default: any) -> int:
-    initCheck()
-    dump = False
-    with open('data/json/databases') as file:
-        data = json.load(file)
-        if not database in data:
-            return 2
-        else:
-            if not table in data[database]:
-                return 3
-            data[database][table]['NCOL']+=1
-            dump = True
-    if dump:
-        with open('data/json/databases', 'w') as file:
-            json.dump(data, file)
+    try:
+        if not database.isidentifier() \
+        or not table.isidentifier():
+            raise Exception()  
 
-        with open('data/json/'+database+'-'+table) as file:
-            data = json.load(file)
-            for d in data:
-                data[d].append(default)
-        with open('data/json/'+database+'-'+table, 'w') as file:
-            json.dump(data, file)
+        existe = server.existeDB(database)
+        if existe is False:
+            return 2
+        existe = server.existeTabla(database, table)
+        if existe is False:
+            return 3
+        server.alterAddC(database, table, default)
         return 0
-    else:
-        return 1  
+    except:
+        return 1
+
+    #initCheck()
+    #dump = False
+    #with open('data/json/databases') as file:
+        #data = json.load(file)
+        #if not database in data:
+            #return 2
+        #else:
+            #if not table in data[database]:
+                #return 3
+            #data[database][table]['NCOL']+=1
+            #dump = True
+    #if dump:
+        #with open('data/json/databases', 'w') as file:
+            #json.dump(data, file)
+
+        #with open('data/json/'+database+'-'+table) as file:
+            #data = json.load(file)
+            #for d in data:
+                #data[d].append(default)
+        #with open('data/json/'+database+'-'+table, 'w') as file:
+            #json.dump(data, file)
+        #return 0
+    #else:
+        #return 1  
 
 # drop a column and its content (except primary key columns)
 def alterDropColumn(database: str, table: str, columnNumber: int) -> int:
-    initCheck()
-    dump = False
-    with open('data/json/databases') as file:
-        data = json.load(file)
-        if not database in data:
-            return 2
-        else:
-            if not table in data[database]:
-                return 3
-            ncol = data[database][table]['NCOL']            
-            pkey = data[database][table]['PKEY']
-            if columnNumber in pkey:
-                return 4            
-            if not ncol >len(pkey):
-                return 4
-            if columnNumber<0 or columnNumber>ncol-1:
-                return 5
-            data[database][table]['NCOL']-=1
-            dump = True
-    if dump:
-        with open('data/json/databases', 'w') as file:
-            json.dump(data, file)
+    try:
+        if not database.isidentifier() \
+        or not table.isidentifier() \
+        or not isinstance(columnNumber, int):
+            raise Exception()  
 
-        with open('data/json/'+database+'-'+table) as file:
-            data = json.load(file)
-            for d in data:
-                data[d].pop(columnNumber)
-        with open('data/json/'+database+'-'+table, 'w') as file:
-            json.dump(data, file)
-        return 0
-    else:
-        return 1  
-'''        
+        existe = server.existeDB(database)
+        if existe is False:
+            return 2
+        existe = server.existeTabla(database, table)
+        if existe is False:
+            return 3
+
+        return server.alterDropC(database, table, columnNumber)
+    except:
+        return 1
+      
 # Delete a table name by inserting new_key and deleting old_key
 def dropTable(database: str, table: str) -> int:
     try:
@@ -413,11 +413,8 @@ def insert(database: str, table: str, register: list) -> int:
         existe = server.existeTabla(database, table)
         if existe is False:
             return 3
-        '''
-        4 llave primaria duplicada, 5 columnas fuera de límites.
-        '''
-        server.insert(database, table, register)
-        return 0
+
+        return server.insert(database, table, register)
     except:
         return 1
 
@@ -494,11 +491,8 @@ def update(database: str, table: str, register: dict, columns: list) -> int:
         existe = server.existeTabla(database, table)
         if existe is False:
             return 3
-        '''
-        4 llave primaria no existe.
-        '''
-        server.actualizarDatos(database, table, register, columns)
-        return 0
+
+        return server.actualizarDatos(database, table, register, columns)
     except:
         return 1
     
@@ -554,11 +548,8 @@ def delete(database: str, table: str, columns: list) -> int:
         existe = server.existeTabla(database, table)
         if existe is False:
             return 3
-        '''
-        4 llave primaria no existe.
-        '''
-        server.eliminarRegistro(database, table, columns)
-        return 0
+
+        return server.eliminarRegistro(database, table, columns)
     except:
         return 1
     #initCheck()
@@ -637,6 +628,9 @@ def truncate(database: str, table: str) -> int:
             #return 0
     #else:
         #return 1
+
+def showRegister(database: str, table: str):
+    server.generarReporteBMasPlus(database, table)
 '''
 #############
 # Utilities #

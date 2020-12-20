@@ -264,7 +264,7 @@ class Arbol_AVL:
         dot.write("}")
         dot.close()
 
-        #os.system('dot -Tpng DB.dot -o DB.png')
+        os.system('dot -Tpng DB.dot -o DB.png')
 
     def reporteTablas(self):
         dot = open("Tablas.dot", "w")
@@ -276,7 +276,7 @@ class Arbol_AVL:
         dot.write("}")
         dot.close()
 
-        #os.system('dot -Tpng Tablas.dot -o Tablas.png')
+        os.system('dot -Tpng Tablas.dot -o Tablas.png')
 
     def getListaNombres(self):
         lista = []

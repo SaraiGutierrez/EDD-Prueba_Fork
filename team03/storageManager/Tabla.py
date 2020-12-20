@@ -1,10 +1,11 @@
-from storageManager.arbolbplus import ArbolBmas
+#from storageManager.arbolbplus import ArbolBmas
+from storageManager.CrudTupla import CrudTuplas
 
 class Tabla:
     def __init__(self, nombre, columnas):
         self.nombre = nombre
         self.columnas = columnas
-        self.estructura = ArbolBmas()
+        self.estructura = CrudTuplas(columnas)
 
     def getNombreASCII(self):
         number = 0
