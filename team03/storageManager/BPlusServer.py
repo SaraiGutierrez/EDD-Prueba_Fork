@@ -29,8 +29,8 @@ class BPlusServer:
 
     def showDB(self):
         ############BORRAR#######SOLO PRUEBA###################
-        root = self.__db_Tree.getRoot()
-        self.__db_Tree.imprimirPreOrden(root)
+        #root = self.__db_Tree.getRoot()
+        #self.__db_Tree.imprimirPreOrden(root)
         ####PRUEBA PARA GENERAR EL GRAFO DE BASES DE DATOS####
         self.__db_Tree.reporteDB()
         ############BORRAR#######SOLO PRUEBA###################
@@ -71,39 +71,27 @@ class BPlusServer:
 
     def extractT(self, database, table):
         #Se extrae el nodo de la base de datos buscada
-        '''
         idDB = self.__getNombreASCII(database)
         dbBuscada = self.__db_Tree.buscarObjeto(idDB, database)
 
         #Se extrae el nodo de la tabla buscada
-        
         idTable = self.__getNombreASCII(table)
         tableBuscada = dbBuscada.objeto.estructura.buscarObjeto(idTable, table)
         
-        Falta llamar al metodo que retorna la lista de registros
-        return tableBuscada.objeto.estructura.
-        '''
-        ###BORRAR####
-        return []
-        ###BORRAR####
+        return tableBuscada.objeto.estructura.extractTable()
+        
 
     def extractRangeT(self, database, table, columnNumber, lower, upper):
         #Se extrae el nodo de la base de datos buscada
-        '''
         idDB = self.__getNombreASCII(database)
         dbBuscada = self.__db_Tree.buscarObjeto(idDB, database)
 
         #Se extrae el nodo de la tabla buscada
-        
         idTable = self.__getNombreASCII(table)
         tableBuscada = dbBuscada.objeto.estructura.buscarObjeto(idTable, table)
         
-        Falta llamar al metodo que retorna la lista de registros
-        return tableBuscada.objeto.estructura.
-        '''
-        ###BORRAR####
-        return []
-        ###BORRAR####
+        return tableBuscada.objeto.estructura.extractRangeTable(columnNumber, lower, upper)
+        
 
     def alterT(self, database, tableOld, tableNew):
         #Se extrae el nodo de la base de datos buscada
@@ -129,6 +117,28 @@ class BPlusServer:
         #Insertar la Tabla nueva
         dbBuscada.objeto.estructura.insertar(nuevaT)
 
+    def alterAddC(self, database, table, default):
+        #Se extrae el nodo de la base de datos buscada
+        idDB = self.__getNombreASCII(database)
+        dbBuscada = self.__db_Tree.buscarObjeto(idDB, database)
+
+        #Se extrae el nodo de la tabla buscada
+        idTable = self.__getNombreASCII(table)
+        tableBuscada = dbBuscada.objeto.estructura.buscarObjeto(idTable, table)
+        
+        tableBuscada.objeto.estructura.alterAddColumn(default)
+
+    def alterDropC(self, database, table, columnNumber):
+        #Se extrae el nodo de la base de datos buscada
+        idDB = self.__getNombreASCII(database)
+        dbBuscada = self.__db_Tree.buscarObjeto(idDB, database)
+
+        #Se extrae el nodo de la tabla buscada
+        idTable = self.__getNombreASCII(table)
+        tableBuscada = dbBuscada.objeto.estructura.buscarObjeto(idTable, table)
+        
+        return tableBuscada.objeto.estructura.alterDropColumn(columnNumber)
+
     def dropT(self, database, table):
         #Se extrae el nodo de la base de datos buscada
         idDB = self.__getNombreASCII(database)
@@ -153,14 +163,10 @@ class BPlusServer:
         idTable = self.__getNombreASCII(table)
         tableBuscada = dbBuscada.objeto.estructura.buscarObjeto(idTable, table)
         
-        tableBuscada.objeto.estructura
-        '''
-        FALTA LLAMAR EL METODO DEL B-MAS Y ENVIARLE EL REGISTRO
-        '''
+        return tableBuscada.objeto.estructura.insert(register)
     
     def cargarCSV(self, filepath, database, table):
         #Se extrae el nodo de la base de datos buscada
-        '''
         idDB = self.__getNombreASCII(database)
         dbBuscada = self.__db_Tree.buscarObjeto(idDB, database)
 
@@ -168,17 +174,10 @@ class BPlusServer:
         idTable = self.__getNombreASCII(table)
         tableBuscada = dbBuscada.objeto.estructura.buscarObjeto(idTable, table)
 
-        tableBuscada.objeto.estructura
-        
-        FALTA LLAMAR EL METODO DEL B-MAS Y ENVIARLE EL FILEPATH
-        '''
-        ##BORRAR###
-        return []
-        ##BORRAR###
+        return tableBuscada.objeto.estructura.loadCSV(filepath)
 
     def extractR(self, database, table, columns):
         #Se extrae el nodo de la base de datos buscada
-        '''
         idDB = self.__getNombreASCII(database)
         dbBuscada = self.__db_Tree.buscarObjeto(idDB, database)
 
@@ -186,17 +185,10 @@ class BPlusServer:
         idTable = self.__getNombreASCII(table)
         tableBuscada = dbBuscada.objeto.estructura.buscarObjeto(idTable, table)
 
-        tableBuscada.objeto.estructura
-        
-        FALTA LLAMAR EL METODO DEL B-MAS Y ENVIARLE EL COLUMNS
-        '''
-        ##BORRAR###
-        return []
-        ##BORRAR###
+        return tableBuscada.objeto.estructura.extractRow(columns)
 
     def actualizarDatos(self, database, table, register, columns):
         #Se extrae el nodo de la base de datos buscada
-        '''
         idDB = self.__getNombreASCII(database)
         dbBuscada = self.__db_Tree.buscarObjeto(idDB, database)
 
@@ -204,14 +196,11 @@ class BPlusServer:
         idTable = self.__getNombreASCII(table)
         tableBuscada = dbBuscada.objeto.estructura.buscarObjeto(idTable, table)
 
-        tableBuscada.objeto.estructura
+        return tableBuscada.objeto.estructura.update(register, columns)
         
-        FALTA LLAMAR EL METODO DEL B-MAS Y ENVIARLE EL REGISTER Y COLUMNS
-        '''
 
     def eliminarRegistro(self, database, table, columns):
         #Se extrae el nodo de la base de datos buscada
-        '''
         idDB = self.__getNombreASCII(database)
         dbBuscada = self.__db_Tree.buscarObjeto(idDB, database)
 
@@ -219,10 +208,7 @@ class BPlusServer:
         idTable = self.__getNombreASCII(table)
         tableBuscada = dbBuscada.objeto.estructura.buscarObjeto(idTable, table)
 
-        tableBuscada.objeto.estructura
-        
-        FALTA LLAMAR EL METODO DEL B-MAS Y ENVIARLE EL COLUMNS
-        '''
+        return tableBuscada.objeto.estructura.delete(columns)
 
     def truncateT(self, database, table):
         #Se extrae el nodo de la base de datos buscada
@@ -233,7 +219,7 @@ class BPlusServer:
         idTable = self.__getNombreASCII(table)
         tableBuscada = dbBuscada.objeto.estructura.buscarObjeto(idTable, table)
 
-        tableBuscada.objeto.estructura.raiz = None
+        tableBuscada.objeto.estructura.truncateRaiz()
 
     #############
     # Utilities #
@@ -260,6 +246,17 @@ class BPlusServer:
         ####PRUEBA PARA GENERAR EL GRAFO DE TABLAS####
         dbBuscada.objeto.estructura.reporteTablas()
         return dbBuscada.objeto.estructura.getListaNombres()
+
+    def generarReporteBMasPlus(self, database, table):
+        #Se extrae el nodo de la base de datos buscada
+        idDB = self.__getNombreASCII(database)
+        dbBuscada = self.__db_Tree.buscarObjeto(idDB, database)
+
+        #Se extrae el nodo de la tabla buscada
+        idTable = self.__getNombreASCII(table)
+        tableBuscada = dbBuscada.objeto.estructura.buscarObjeto(idTable, table)
+
+        tableBuscada.objeto.estructura.graficar()
 
     def existeDB(self, database):
         existe = True
