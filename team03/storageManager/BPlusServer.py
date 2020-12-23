@@ -143,7 +143,8 @@ class BPlusServer:
         idTable = self.__getNombreASCII(table)
         tableBuscada = dbBuscada.objeto.estructura.buscarObjeto(idTable, table)
         #Se agrega una columna al final de cada registro de la tabla con un atributo default.
-        tableBuscada.objeto.estructura.alterAddColumn(default)
+        #Retorna un valor entero: 0 operación exitosa, 1 error en la operación
+        return tableBuscada.objeto.estructura.alterAddColumn(default)
 
     def alterDropC(self, database, table, columnNumber):
         #Se extrae el nodo de la base de datos buscada

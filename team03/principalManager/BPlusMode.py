@@ -228,8 +228,7 @@ def alterAddColumn(database, table, default):
         if existe is False:
             return 3
         
-        server.alterAddC(database, table, default)
-        return 0
+        return server.alterAddC(database, table, default)
     except:
         return 1 
 
