@@ -1,4 +1,3 @@
-#from storageManager.arbolbplus import ArbolBmas
 from storageManager.CrudTupla import CrudTuplas
 
 class Tabla:

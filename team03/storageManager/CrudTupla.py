@@ -3,11 +3,9 @@
 # Notice:       Copyright (c) 2020 TytusDB Team
 # Developer:    Maynor Piló Tuy
 
-import sys 
 import os
 import time
-#import Estructura
-from storageManager.Estructura import ArbolBmas
+from storageManager.ArbolBmas import ArbolBmas
 
 #  CLASE PARA INSTANCIAR CADA UNA DE LAS FUNCIONES :
 class CrudTuplas:
@@ -65,7 +63,7 @@ class CrudTuplas:
         lista_retorno = []  # lista que contendra los valores de retorno
         try:
             
-            archivo = open(file,'r',encoding='UTF-8')
+            archivo = open(file,'r',encoding='UTF-8')   #,encoding='UTF-8'
             # procesar el archivo
             data = archivo.readlines()
             archivo.close() 
@@ -79,7 +77,7 @@ class CrudTuplas:
                 
             return  lista_retorno  # retorno de  la lista con los valores ingresados
         except IOError:
-            print ("Error de entrada")
+            #print ("Error de entrada")
             lista_retorno = []
             return []
 
@@ -109,19 +107,23 @@ class CrudTuplas:
     # 1 ERROR EN LA OPERACION
     # 4 LLAVE PRIMARIA NO EXISTE
     def delete(self,columns):
-        pkey = ""
-        for k in columns:
-            pkey +=str(k)+"_"            
-        pkey=pkey[:-1]
-        resultado = self.tabla.eliminar(pkey)
-        if resultado == 0:
-            return  0
-        elif resultado == 1:   # ENCERRAR LA FUNCION EN UNA TRY EXCEPT 
+        try:
+            pkey = ""
+            for k in columns:
+                pkey +=str(k)+"_"            
+            pkey=pkey[:-1]
+            resultado = self.tabla.eliminar(pkey)
+
+            if resultado :
+                return  0
+            else:
+                return 4
+        except (TypeError):
             return 1
-        elif resultado == 4:
-            return 4
 
     # FUNCION 6 -  PENDIENTE
+    def truncateRaiz(self):
+        self.tabla.truncateRoot()
     
     ##########################################################################################################
     ############                                FUNCIONES  AUX CRUD  TABLAS                       ############ 
@@ -154,20 +156,49 @@ class CrudTuplas:
                     return 5
             # comprobamos si hay valores en la lista:
             listado = self.tabla.Claves_Hojas()
-            data = self.tabla.ListaEnlazada(None,None,None)
+            
             if len(listado) == 0:   # no hay registros en el arbol
                 self.pk = keys
+                return 0
             else:                   # si hay registros en la tabla
                 # se ingresa las keys en el listado de llaves
                 self.pk = keys
+                # se comprueba si hay registros con llaves repetidas
+                pktemp=[] # contiene las llaves primarias temporales
+
+                # se crean las llaves temporales
+                try:
+                    for d in listado:
+                        pkey = ""
+                        for k in self.pk:
+                            pkey +=str(d.data[k])+"_"
+
+                        pkey=pkey[:-1]
+                        if pkey in pktemp:  # corrobora si existe la llave genera en el listado temporal
+                            return 1
+                        else: 
+                            pktemp.append(pkey)                       
+                except (IndexError): 
+                    return 5                                     
                 # se elimina cada registro
                 for c in listado:
-                    self.delete([c])
-                # se inserta los nuevos valores
-                for d in data:
-                    self.insert(d)
+                    # se elimina primero el registro 
+                    self.delete([c.clave])
+                    # se inserta el nuevo valor
+                    self.insert(c.data)
+                return 0
+                
 
     #FUNCION 4: def alterDropPK
+    def alterDropPK(self):
+        try:
+            if len(self.pk)==0:
+                return 4
+            else:
+                self.pk=[]
+                return 0
+        except TypeError:
+            return 1
 
 
     #FUNCION 5: ALTER ADD COLUMN, AGREGA UNA COLUMNA AL FINAL DE CADA REGISTRO : REIBE COMO PARAMETRO: DEFAULT: ANY
@@ -193,106 +224,17 @@ class CrudTuplas:
                         return 4
                     else:
                         result = self.tabla.AlterCol("Drop",col)
+                        self.tamCol -=1
                     return result
                 else:
                     result = self.tabla.AlterCol("Drop",col)
+                    self.tamCol -=1
                     return result
             else:
                 return 4
            
         except (ValueError):
             return 4
-    
-    def truncateRaiz(self):
-        self.tabla.truncateRoot()
 
-    def result(self):
-            print("resultados ")
-            self.tabla.recorrer()
     def graficar(self):
         self.tabla.graphviz()
-
-'''
-def main():
-    prueba = CrudTuplas(None, 4)
-
-    # FUNCION DE INSERTAR 
-    """
-    i=0
-    while i<200:
-        prueba.insert([ i  ])
-        i +=1
-    """
-    
-   
-    prueba.insert([ 1 , 'Guatemala' ,     'Guatemala' ,     'GTM' ])
-    prueba.insert([ 2 , 'Cuilapa' ,       'Santa Rosa' ,    'GTM' ])
-    prueba.insert([ 3 , 'San Salvador' , 'San Salvador' , 'SLV' ])
-    prueba.insert([ 4 , 'San Miguel' ,    'San Miguel' ,    'SLV' ])
-    prueba.insert([ 5 , 'Argentina' ,     'Buenos Aires' ,     'GTM' ])
-    prueba.insert([ 6 , 'Bolivia' ,     'Sucre' ,     'GTM' ])
-    prueba.insert([ 7 , 'Brasil' ,     'Brasilia' ,     'GTM' ])
-    prueba.insert([ 8 , 'Chile' ,     'Santiago de Chile' ,     'GTM' ])
-    prueba.insert([ 9 , 'Colombia' ,     'Bogotá' ,     'GTM' ])
-    """"
-    prueba.insert([ 10 , 'Costa Rica' ,     'San José' ,     'GTM' ])
-    prueba.insert([ 11, 'Cuba' ,     'La Habana' ,     'GTM' ])
-    prueba.insert([ 12 , 'Ecuador' ,     'Quito' ,     'GTM' ])
-    prueba.insert([ 13 , 'Haití' ,     'Puerto Príncipe' ,     'GTM' ])
-    prueba.insert([ 14, 'Honduras' ,     'Tegucigalpa' ,     'GTM' ])
-    prueba.insert([ 15, 'México' ,     'Ciudad de México' ,     'GTM' ])
-    prueba.insert([ 16, 'Nicaragua' ,     'Managua' ,     'GTM' ])
-    prueba.insert([ 17, 'Panamá' ,     'Panamá' ,     'GTM' ])
-    prueba.insert([ 18, 'Paraguay' ,     'Asunción' ,     'GTM' ])
-    prueba.insert([ 19, 'Perú' ,     'Lima' ,     'GTM' ])
-    prueba.insert([ 20, 'República Dominicana' ,     'Santo Domingo' , 'GTM' ])
-    prueba.insert([ 21, 'Uruguay' ,     'Montevideo.' ,     'GTM' ])
-    prueba.insert([ 22, 'Venezuela' ,     'Caracas' ,     'GTM' ])
-
-    """
-    #prueba.loadCSV("prueba.csv")
-    #prueba.result()
-    """
-    prueba.result()
-    print(" RESULTADO DE EXTRACT ROW")
-    p =prueba.extractRow([1,'Guatemala'])
-    print(p)
-    gc.collect()
-    print("RESULTADO DE LA FUNCIO UPDATE")
-    print(prueba.update({1:"Solola",4:"Solola"},[1]))
-    """
-    #MOSTRAR RESULTADOS
-    #prueba.result()
-
-    #GRAFICAR LOS NODOS 
-    #prueba.graficar()
-
-    # FUNCIONES CRUD TABLA
-    # FUNCIO EXTRAC TABLE
-    #prueba.extractTable()
-    # FUNCIO EXTRAC TABLE
-    #prueba.extractRangeTable(1,5,9)
-    # FUNCION ADD COLUMN
-    #print("ADD COLUMN \n ")
-    #print(prueba.alterAddColumn("NColumn"))
-    #prueba.graficar()
-    #prueba.extractTable()
-    #print("Drop COLUMN \n ")
-    #print(prueba.alterDropColumn(5))
-    #prueba.graficar()
-    prueba.extractTable()
-   
-    #print( prueba.extractRow([1]))
-    #prueba.result()
-    #prueba.alterAddPK([0,3])
-    #prueba.result()
-    prueba.delete([5])
-    prueba.extractTable()
-   
-    
-
-if __name__ == "__main__":
-    main()
-'''
-
-
