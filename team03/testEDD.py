@@ -7,7 +7,7 @@ from principalManager import BPlusMode as bp
 
 # assume no data exist or execute the next drop function
 #bp.dropAll()
-
+'''
 # create database
 print(bp.createDatabase('world'))
 
@@ -17,9 +17,9 @@ print(bp.createTable('world', 'cities',    4))
 print(bp.createTable('world', 'languages', 4))
 
 # create simple primary keys
-#bp.alterAddPK('world', 'countries', [0])
-#bp.alterAddPK('world', 'cities',    [0])
-#bp.alterAddPK('world', 'languages', [0, 1])
+print(bp.alterAddPK('world', 'countries', [0]))
+print(bp.alterAddPK('world', 'cities',    [0]))
+print(bp.alterAddPK('world', 'languages', [0, 1]))
 
 # insert data in countries
 print(bp.insert('world', 'countries', ['GTM', 'Guatemala',  'Central America', 108889]))
@@ -34,11 +34,16 @@ print(bp.insert('world', 'cities', [4, 'San Miguel',   'San Miguel',   'SLV']))
 # inser data in languages
 print(bp.insert('world', 'languages', ['GTM', 'Spanish', 'official',  64.7]))
 print(bp.insert('world', 'languages', ['SLV', 'Spanish', 'official', 100.0]))
+'''
+bp.server.serializar()
 
-bp.showRegister('world', 'cities')
-#bp.showRegister('world', 'countries')
-#bp.showRegister('world', 'languages')
+#bp.showRegister('world', 'cities')
 
+#bp.server.deserializar()
+#print()
+#print(bp.showTables('world'))
+#print()
+#print(bp.extractTable('world','countries'))
 '''
 # test Databases CRUD
 print(bp.createDatabase('db1'))      # 0 

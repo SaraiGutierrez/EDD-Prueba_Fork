@@ -214,23 +214,23 @@ class Arbol_AVL:
         return nodo
 
     # Retorna el nodo donde se encuentra el objeto buscado
-    def buscarObjeto(self, id, old):
-        buscado = self.__buscarObjeto(self.root, id, old)
+    def buscarObjeto(self, id, nombre):
+        buscado = self.__buscarObjeto(self.root, id, nombre)
         return buscado
     
-    def __buscarObjeto(self, raiz, id, oldName):
+    def __buscarObjeto(self, raiz, id, nombre):
         if not raiz:
             return raiz
         elif id < raiz.objeto.getNombreASCII():
-            raiz = self.__buscarObjeto(raiz.izquierda, id, oldName)
+            raiz = self.__buscarObjeto(raiz.izquierda, id, nombre)
         elif id > raiz.objeto.getNombreASCII():
-            raiz = self.__buscarObjeto(raiz.derecha, id, oldName)
+            raiz = self.__buscarObjeto(raiz.derecha, id, nombre)
         else:
             #Comprobar por nombre la base de datos
-            if oldName == raiz.objeto.nombre:
+            if nombre == raiz.objeto.nombre:
                 '''Solo retorna la raiz'''
             else:
-                raiz = self.__buscarObjeto(raiz.derecha, id, oldName)
+                raiz = self.__buscarObjeto(raiz.derecha, id, nombre)
         return raiz
 
     def __dot(self, raiz):
@@ -287,15 +287,20 @@ class Arbol_AVL:
     def imprimirInOrden(self, raiz, lista):
         if raiz != None:
             self.imprimirInOrden(raiz.izquierda, lista)
-            #print(raiz.objeto.nombre, " ", str(raiz.objeto.getNombreASCII()))
             lista.append(raiz.objeto.nombre)
             self.imprimirInOrden(raiz.derecha, lista)
 
-    def imprimirPreOrden(self, raiz):
+    def getObjetosList(self):
+        listaOb = []
+        self.imprimirPreOrden(self.root, listaOb)
+
+        return listaOb
+
+    def imprimirPreOrden(self, raiz, listaOb):
         if raiz != None:
-            print(raiz.objeto.nombre, " ", str(raiz.objeto.getNombreASCII()))
-            self.imprimirPreOrden(raiz.izquierda)
-            self.imprimirPreOrden(raiz.derecha)
+            listaOb.append(raiz.objeto)
+            self.imprimirPreOrden(raiz.izquierda, listaOb)
+            self.imprimirPreOrden(raiz.derecha, listaOb)
 
     def imprimirPosOrden(self, raiz):
         if raiz != None:
