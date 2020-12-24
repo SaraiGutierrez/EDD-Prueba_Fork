@@ -154,6 +154,8 @@ class ArbolBmas:
 
     def truncateRoot(self):
         self.raiz = None
+<<<<<<< HEAD:team03/storageManager/ArbolBmas.py
+=======
 
 ################################################################################################################
 ################################################################################################################
@@ -377,3 +379,4 @@ class ArbolBmas:
                 self._Claves_Hojas(pagina.contenido[0],lista)
         except( IOError):
             return []
+>>>>>>> 5ff119819b0ca4915a454f7539c691429717bca9:team20/ArbolBmas.py
