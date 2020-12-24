@@ -12,8 +12,6 @@ from storageManager.Pagina import Pagina
 class ArbolBmas:
     def __init__(self):
         self.raiz = None
-        self.Dato = []
-        self.retorno = 1 
 
     def insertar(self, clave, data):
         if self.estaVacio():
@@ -147,8 +145,6 @@ class ArbolBmas:
             pos += 1
 
     def eliminar(self, clave):
-        if  self.raiz is None:
-            return False
         seElimino, esHoja = self.raiz.eliminar(clave, None, self.raiz)
         if seElimino == True:
             '''print(str(clave) + ' eliminado.')'''
@@ -164,59 +160,48 @@ class ArbolBmas:
 
     #METODO DE BUSQUEDA DENTRO DEL ARBOL  ---------------------------------------------------------
     def Busqueda(self,valor):
-        if self.raiz is None:
-            return []
-        else:
-            self.Dato =[] 
-            self._Busqueda(self.raiz,valor)
-            return  self.Dato
-    def _Busqueda(self, pagina,valor):
-        if pagina is None:
-            return []
+        return self._Busqueda(self.raiz,valor)
+      
     
-        # se busca el valor en el nodo
-        for x in pagina.contenido[1::2]:
-            if valor == x.clave:
-                self.Dato.append(x.data)
-                break
+    def _Busqueda(self, pagina,valor):
         cont=1
         #i= len(pagina.contenido)      
         for x in pagina.contenido[1::2]:
+            #print("el valor es: ", x.data)
             if cont==1:
                 if len(pagina.contenido)==3:
                     if valor < x.clave: 
                         self._Busqueda(pagina.contenido[0], valor)
-                        cont+=2
                         break
+                           
                     else:
                         self._Busqueda(pagina.contenido[2], valor)
-                        cont+=2
                         break
+                           
                 else:
                     if valor >= x.clave and valor < pagina.contenido[cont+2].clave: 
                         self._Busqueda(pagina.contenido[cont+1], valor)
-                        cont+=2
                         break
                            
                     elif valor < x.clave: 
                         self._Busqueda(pagina.contenido[0], valor)
-                        cont+=2
                         break
                            
             elif cont == len(pagina.contenido)-2:
                 if valor >= x.clave: 
                     self._Busqueda(pagina.contenido[cont+1], valor)
-                    cont+=2
                     break
                         
             elif valor >= x.clave and valor < pagina.contenido[cont+2].clave:
                 self._Busqueda(pagina.contenido[cont+1], valor)
-                cont+=2
-                break   
-            
+                break
+                    
+            cont+=2
+
     def VerHoja(self, pag):
         if pag == None:
             return []
+        
         esHoja = True
         i = 0      
         while i < len(pag.contenido):
@@ -225,71 +210,64 @@ class ArbolBmas:
         return esHoja       
 
     def Update(self,diccionario, val ):
-        if self.raiz is None:
-            return 4
-        else:
-            self._Upadate(diccionario,self.raiz,val )
-            return self.retorno
+        return self._Upadate(diccionario,self.raiz,val )
 
     def _Upadate(self,diccionario,pagina,valor):
-        if pagina is None:
-            self.retorno = 4
-            return self.retorno
          #ES LA ULTIMA PAGINA 
-        try:
-            if self.VerHoja(pagina):
-                for val in pagina.contenido[1::2]:
-                    if val.clave ==valor:
-                        try:
-                            # CAMBIO DE DATOS DENTRO DEL REGISTRO
-                            for x in diccionario:
-                                val.data[x]=diccionario[x]
-                            self.retorno = 0
-                            return self.retorno
-                        except ( IndexError):
-                            self.retorno = 1
-                            return self.retorno
-                self.retorno = 4
-                return self.retorno
-            # CORROBORAR  SI ES POR LA IZQUIERDA
-            else:
-                cont=1
-                #i= len(pagina.contenido)      
-                for x in pagina.contenido[1::2]:
-                    if cont==1:
-                        if len(pagina.contenido)==3:
-                            if valor < x.clave: 
-                                self._Upadate(diccionario,pagina.contenido[0], valor)
-                                break
-                            else:
-                                self._Upadate(diccionario,pagina.contenido[2], valor)
-                                break
+        if self.VerHoja(pagina):
+            for val in pagina.contenido[1::2]:
+                if val.clave ==valor:
+                    try:
+                        # CAMBIO DE DATOS DENTRO DEL REGISTRO
+                        #print("Datos anteriores: " , val.data)
+                        for x in diccionario:
+                            val.data[x]=diccionario[x]
+                        
+                        #print ("Nuevos datos: " ,val.data)
+                        return 0
+                    except ( IndexError):
+                        #print("Error 1")
+                        return 1
+            return 4
+           
+        # CORROBORAR  SI ES POR LA IZQUIERDA
+        else:
+            cont=1
+            #i= len(pagina.contenido)      
+            for x in pagina.contenido[1::2]:
+                #print("el valor es: ", x.data)
+                if cont==1:
+                    if len(pagina.contenido)==3:
+                        if valor < x.clave: 
+                            self._Upadate(diccionario,pagina.contenido[0], valor)
+                            break
                         else:
-                            if valor >= x.clave and valor < pagina.contenido[cont+2].clave: 
-                                self._Upadate(diccionario,pagina.contenido[cont+1], valor)
-                                break
-                            elif valor < x.clave: 
-                                self._Upadate(diccionario,pagina.contenido[0], valor)
-                                break
-                    elif cont == len(pagina.contenido)-2:
-                        if valor >= x.clave: 
+                            self._Upadate(diccionario,pagina.contenido[2], valor)
+                            break
+                        
+                    else:
+                        if valor >= x.clave and valor < pagina.contenido[cont+2].clave: 
                             self._Upadate(diccionario,pagina.contenido[cont+1], valor)
                             break
-                    
-                    elif valor >= x.clave and valor < pagina.contenido[cont+2].clave:
+                        elif valor < x.clave: 
+                            self._Upadate(diccionario,pagina.contenido[0], valor)
+                            break
+                 
+                elif cont == len(pagina.contenido)-2:
+                    if valor >= x.clave: 
                         self._Upadate(diccionario,pagina.contenido[cont+1], valor)
                         break
-                    cont+=2
-        except:
-            return 1
+                   
+                elif valor >= x.clave and valor < pagina.contenido[cont+2].clave:
+                    self._Upadate(diccionario,pagina.contenido[cont+1], valor)
+                    break
+                cont+=2
 
     # ACCEDER A LA LISTA ENLAZADA DE LAS HOJAS AL FINAL DEL ARBOL 
     def ListaEnlazada(self,columns,lower,upper):
-        if self.raiz is None:
-            return  []
         registro=[]
         self._ListaEnlazada(self.raiz,registro,columns,lower,upper)
-        return registro  
+        return registro
     
     def _ListaEnlazada(self,pagina,lista,column,lower,upper):
         try: 
@@ -302,6 +280,11 @@ class ArbolBmas:
                             lista.append(val.data)          
                         
                         pagina = pagina.paginaSiguiente
+                    #print(" FUNCION EXTRACT TABLE")
+                    for r in lista:
+
+                        '''print("los valores son:" ,r)'''
+                    
                     return lista
                 #  PARA LA FUNCION DE EXTRAER TODOS LOS VALORES DE LA TABLA EXTRACT CON RANGO EXTRAC RANGE
                 else: 
@@ -321,17 +304,20 @@ class ArbolBmas:
                             pagina = pagina.paginaSiguiente
                             if contador == upper:
                                 break
+
+                        #print(" FUNCION EXTRACT  RANGE TABLE")
+                        for r in lista:
+                            '''print("los valores son:" ,r)'''
                         return lista
                     except(IndexError):
                         return None
+
             else: 
                 self._ListaEnlazada(pagina.contenido[0],lista,column,lower,upper)
-        except:
+        except:#( IOError)########################SE QUITO IOERROR PARA TIRAR LA EXCEPTION#########
             return []
 
-    def AlterCol(self,function, column): 
-        if self.raiz is None:
-            return 1
+    def AlterCol(self,function, column): # function: recibe la funcion Add o Drop column: valor de columna
         val= self._AlterCol(self.raiz,  function, column)
         return val 
     
@@ -339,12 +325,15 @@ class ArbolBmas:
         retorno = 0
         try:
             if self.VerHoja(pagina):      # se comprueba que es el ultimo nivel del arbol 
+                
                 # FUNCION PARA AGREGAR 
                 if function == "Add":
                     while pagina != None:
                         for val in pagina.contenido[1::2]:
                             val.data.append(column)
                         pagina = pagina.paginaSiguiente
+                   
+                
                 # FUNCION PARA ELIMINAR COLUMNA
                 elif function == "Drop":
                     while pagina != None:
@@ -362,8 +351,6 @@ class ArbolBmas:
     # RETORNA LOS NODOS DEL ARBOL
     # ACCEDER A LA LISTA ENLAZADA DE LAS HOJAS AL FINAL DEL ARBOL 
     def Claves_Hojas(self,):
-        if self.raiz is None:
-            return []
         registro=[]
         self._Claves_Hojas(self.raiz,registro)
         return registro  
@@ -378,9 +365,13 @@ class ArbolBmas:
                         lista.append(val)
                         
                     pagina = pagina.paginaSiguiente
+                #print(" FUNCION EXTRACT TABLE")
+                for r in lista:
+                    '''print("los valores son:" ,r)'''
+                    
                 return lista
                 #  PARA LA FUNCION DE EXTRAER TODOS LOS VALORES DE LA TABLA EXTRACT CON RANGO EXTRAC RANGE
-            elif self.VerHoja(pagina) ==[]:
+            elif self.VerHoja(pagina) == []:
                 return []
             else: 
                 self._Claves_Hojas(pagina.contenido[0],lista)
