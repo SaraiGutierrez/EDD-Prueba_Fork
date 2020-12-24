@@ -153,9 +153,16 @@ class ArbolBmas:
         if seElimino == True:
             '''print(str(clave) + ' eliminado.')'''
         else:
+<<<<<<< HEAD
             '''print('Error: La clave ' + str(clave) + ' no se eliminó.')'''
         return seElimino
 
+=======
+            print('Error: La clave ' + str(clave) + ' no se eliminó.')
+        return seElimino
+
+
+>>>>>>> aecf5c4d48b5882876717db6061092f18aea629b
     def truncateRoot(self):
         self.raiz = None
 
@@ -368,6 +375,7 @@ class ArbolBmas:
         self._Claves_Hojas(self.raiz,registro)
         return registro  
     
+<<<<<<< HEAD
     def _Claves_Hojas(self,pagina,lista):
         try: 
             if self.VerHoja(pagina):
@@ -386,3 +394,6 @@ class ArbolBmas:
                 self._Claves_Hojas(pagina.contenido[0],lista)
         except( IOError):
             return []
+=======
+    def _Claves_Hojas(self,pagina,lista):
+>>>>>>> aecf5c4d48b5882876717db6061092f18aea629b
