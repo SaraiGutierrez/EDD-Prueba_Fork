@@ -1,0 +1,16 @@
+digraph G{
+nodesep = 0.8
+ranksep = 0.5
+node [style = filled, fillcolor = white]
+
+
+"josue" [label = "550
+josue", fillcolor = orange]
+"josue2" -> "josue"
+"josue3" [label = "601
+josue3", fillcolor = orange]
+"josue2" -> "josue3"
+"josue2" [label = "600
+josue2", fillcolor = orange]
+
+}
