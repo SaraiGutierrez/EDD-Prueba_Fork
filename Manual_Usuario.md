@@ -19,10 +19,12 @@ redistribución, la modificación, etc. La única condición es que proporcionem
 copia de la licencia con el software que hemos distribuido. 
 
 ## Objetivo
+#
 
 Brindar a todo usuario de Tytus DB instrucciones para el uso adecuado del administrador de almacenamiento, para el acceso oportuno y adecuado, mostrando los pasos a seguir en el proceso de solicitud de información
 
 ## Herramientas
+#
 
 
 * Python 3 
@@ -30,18 +32,22 @@ Brindar a todo usuario de Tytus DB instrucciones para el uso adecuado del admini
 
 
 ## Uso de la Aplicación
+#
 
 1. **Vista general de la Aplicación.**
 
+<p align="center">
+  <img width="300" height="200" src="Imagenes/Vista_General.jpg">
+</p>
 
-
-![Vista General](Imagenes\Vista_General.jpg )
 
 2. **Bases de datos**
 
    Esta opción nos mostrará todas las bases de datos existentes, al seleccionar un base de datos en especifico se puede visualizar las tablas que contiene dicha base de datos Y seleccionar una tabla en especifico para visualizar los registros dentro de la tabla.
 
-![Vista General](Imagenes\Grafica_BD.jpg)
+<p align="center">
+  <img width="300" height="200" src="Imagenes/Grafica_BD.jpg">
+</p>
 
 3. **Funciones de BD** 
 
@@ -55,8 +61,9 @@ Brindar a todo usuario de Tytus DB instrucciones para el uso adecuado del admini
 ```
 def createDatabase(database: str) -> int:
 ```
-
-![Vista General](Imagenes\Crear_BD.jpg)
+<p align="center">
+  <img width="300" height="200" src="Imagenes/Crear_BD.jpg">
+</p>
 
 * **Alter BD**
 Renombra la base de datos databaseOld por databaseNew. (UPDATE)
@@ -69,8 +76,10 @@ Renombra la base de datos databaseOld por databaseNew. (UPDATE)
 ```
 def alterDatabase(databaseOld, databaseNew) -> int:
 ```
+<p align="center">
+  <img width="300" height="200" src="Imagenes/Alter_BD.jpg">
+</p>
 
-![Vista General](Imagenes\Alter_BD.jpg)
 
 * **Eliminar BD**
 Elimina por completo la base de datos indicada en database. (DELETE)
@@ -82,8 +91,9 @@ Elimina por completo la base de datos indicada en database. (DELETE)
 ```
 def dropDatabase(database: str) -> int: 
 ```
-
-![Vista General](Imagenes\Eliminar_BD.jpg)
+<p align="center">
+  <img width="300" height="200" src="Imagenes/Eliminar_BD.jpg">
+</p>
 
 4. **Funciones de Tablas 1**
 
@@ -101,7 +111,9 @@ Crea una tabla en una base de datos especificada recibiendo una lista de índice
 ```
 def createTable(database: str, table: str, numberColumns: int) -> int:
 ```
-![Vista General](Imagenes\Create_T.jpg)
+<p align="center">
+  <img width="420" height="200" src="Imagenes/Create_T.jpg">
+</p>
 
 * **Show Tables**
 Devuelve una lista de los nombres de las tablas de una base de datos. (READ)
@@ -113,8 +125,10 @@ Devuelve una lista de los nombres de las tablas de una base de datos. (READ)
 ```
 def showTables(database: str) -> list:
 ```
-![Vista General](Imagenes\Show_T.jpg)
 
+<p align="center">
+  <img width="420" height="200" src="Imagenes/Show_T.jpg">
+</p>
 * **Extract Table**
 Extrae y devuelve una lista con elementos que corresponden a cada registro de la tabla. (READ)
 
@@ -127,7 +141,9 @@ Extrae y devuelve una lista con elementos que corresponden a cada registro de la
 ```
 def extractTable(database: str, table: str) -> list:
 ```
-![Vista General](Imagenes\Extract_T.jpg)
+<p align="center">
+  <img width="420" height="200" src="Imagenes/Extract_T.jpg">
+</p>
 
 * **ExtractRange Table**
 Extrae y devuelve una lista con los elementos que corresponden a un rango de registros de la tabla. (READ)
@@ -150,8 +166,9 @@ Parámetro table: es el nombre de la tabla a utilizar.
 ```
 def extractRangeTable(database: str, table: str, columnNumber: int, lower: any, upper: any) -> list:
 ```
-
-![Vista General](Imagenes\ExtractRange_T.jpg)
+<p align="center">
+  <img width="420" height="200" src="Imagenes/ExtractRange_T.jpg">
+</p>
 
 * **Alter Table**
 Renombra el nombre de la tabla de una base de datos especificada. (UPDATE)
@@ -166,7 +183,9 @@ Valor de retorno: 0 operación exitosa, 1 error en la operación, 2 database no 
 ```
 def alterTable(database: str, tableOld: str, tableNew: str) -> int:
 ```
-![Vista General](Imagenes\Alter_T.jpg)
+<p align="center">
+  <img width="420" height="200" src="Imagenes/Alter_T.jpg">
+</p>
 
 * **Alter Add Column**
 Agrega una columna al final de cada registro de la tabla y base de datos especificada. (UPDATE) 
@@ -181,7 +200,10 @@ Parámetro table: es el nombre de la tabla a modificar.
 ```
 def alterAddColumn(database: str, table: str, default: any) -> int:
 ```
-![Vista General](Imagenes\Alter_AC.jpg)
+
+<p align="center">
+  <img width="420" height="200" src="Imagenes/Alter_AC.jpg">
+</p>
 
 5. **Funciones de Tablas 2**
 
@@ -197,8 +219,9 @@ Eliminar una n-ésima columna de cada registro de la tabla excepto si son llaves
 ```
 def alterDropColumn(database: str, table: str, columnNumber: int) -> int:
 ```
-
-![Vista General](Imagenes\Alter_DC.jpg)
+<p align="center">
+  <img width="420" height="200" src="Imagenes/Alter_DC.jpg">
+</p>
 
 * **Drop Table**
  Elimina por completo una tabla de una base de datos especificada. (DELETE)
@@ -212,4 +235,6 @@ def alterDropColumn(database: str, table: str, columnNumber: int) -> int:
 ```
 def dropTable(database: str, table: str) -> int:
 ```
-![Vista General](Imagenes\Drop_T.jpg)
+<p align="center">
+  <img width="420" height="200" src="Imagenes/Drop_T.jpg">
+</p>

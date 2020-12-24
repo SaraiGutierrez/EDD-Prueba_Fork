@@ -13,6 +13,7 @@ class ArbolBmas:
     def __init__(self):
         self.raiz = None
         self.Dato = []
+        self.retorno = 1 
 
     def insertar(self, clave, data):
         if self.estaVacio():
@@ -227,11 +228,13 @@ class ArbolBmas:
         if self.raiz is None:
             return 4
         else:
-            return self._Upadate(diccionario,self.raiz,val )
+            self._Upadate(diccionario,self.raiz,val )
+            return self.retorno
 
     def _Upadate(self,diccionario,pagina,valor):
         if pagina is None:
-            return 4
+            self.retorno = 4
+            return self.retorno
          #ES LA ULTIMA PAGINA 
         try:
             if self.VerHoja(pagina):
@@ -241,10 +244,13 @@ class ArbolBmas:
                             # CAMBIO DE DATOS DENTRO DEL REGISTRO
                             for x in diccionario:
                                 val.data[x]=diccionario[x]
-                            return 0
+                            self.retorno = 0
+                            return self.retorno
                         except ( IndexError):
-                            return 1
-                return 4
+                            self.retorno = 1
+                            return self.retorno
+                self.retorno = 4
+                return self.retorno
             # CORROBORAR  SI ES POR LA IZQUIERDA
             else:
                 cont=1
