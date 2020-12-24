@@ -25,7 +25,9 @@ El administrador de bases de datos es el componente encargado de gestionar el al
 
 Donde cada registro que corresponde a una tupla de una tabla será almacenado en cada nodo de un arbol B+, cada tabla que corresponde a un abol B+ será almacenado en un nodo de un arbol AVL siendo este una base datos donde tendremos un conjunto estructuras arboreas.
 
-![Vista General](Imagenes\Flujo.jpg )
+<p align="center">
+  <img width="400" height="200" src="Imagenes/Flujo.jpg">
+</p>
 
 ## Fundamentos Teóricos
 #
