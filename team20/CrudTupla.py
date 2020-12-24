@@ -3,9 +3,11 @@
 # Notice:       Copyright (c) 2020 TytusDB Team
 # Developer:    Maynor Piló Tuy
 
+import sys 
 import os
 import time
-from storageManager.ArbolBmas import ArbolBmas
+from storageManager.Estructura import ArbolBmas
+
 
 #  CLASE PARA INSTANCIAR CADA UNA DE LAS FUNCIONES :
 class CrudTuplas:
@@ -77,7 +79,7 @@ class CrudTuplas:
                 
             return  lista_retorno  # retorno de  la lista con los valores ingresados
         except IOError:
-            #print ("Error de entrada")
+            print ("Error de entrada")
             lista_retorno = []
             return []
 
@@ -121,6 +123,25 @@ class CrudTuplas:
         except (TypeError):
             return 1
 
+    ############################DELETE ANTERIOR################
+    '''
+    def delete(self,columns):
+        try:
+            pkey = ""
+            for k in columns:
+                pkey +=str(k)+"_"            
+            pkey=pkey[:-1]
+            resultado = self.tabla.eliminar(pkey)
+            if resultado == 0:
+                return  0
+            elif resultado == 1:   # ENCERRAR LA FUNCION EN UNA TRY EXCEPT 
+                return 1
+            elif resultado == 4:
+                return 4
+        except (TypeError):
+            return 1
+    '''
+    ############################DELETE ANTERIOR################
     # FUNCION 6 -  PENDIENTE
     def truncateRaiz(self):
         self.tabla.truncateRoot()
@@ -165,8 +186,8 @@ class CrudTuplas:
                 self.pk = keys
                 # se comprueba si hay registros con llaves repetidas
                 pktemp=[] # contiene las llaves primarias temporales
-
                 # se crean las llaves temporales
+                
                 try:
                     for d in listado:
                         pkey = ""
