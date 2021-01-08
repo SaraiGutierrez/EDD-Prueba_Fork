@@ -5,7 +5,7 @@
 
 
 from ..DataAccessLayer import reports
-from .. import avlMode as AVLTreeStructure
+from .. import avl_mode as AVLTreeStructure
 from ..DataAccessLayer.handler import Handler
 
 

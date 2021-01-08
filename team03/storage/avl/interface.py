@@ -4,7 +4,7 @@
 # Developers: SG#16
 
 
-from team16.View.Interfaz import run
+from .View.Interfaz import run
 
 if __name__ == '__main__':
     run()

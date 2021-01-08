@@ -3,7 +3,7 @@
 # Copyright (c) 2020 TytusDb Team
 
 
-from storage import ListaBaseDatos, serealizar
+from storage.hash import ListaBaseDatos, serealizar
 import os, re, csv
 
 _storage = ListaBaseDatos.ListaBaseDatos()

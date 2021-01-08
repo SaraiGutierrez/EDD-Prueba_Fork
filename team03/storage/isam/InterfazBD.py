@@ -5,7 +5,7 @@ from tkinter import ttk
 import json
 import Table
 from tkinter import filedialog
-import ISAMMode as Storage
+import storage.isam.isam_Mode as Storage
 from DataBase import DataBase
 from Table import Table
 import os
