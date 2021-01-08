@@ -3,7 +3,7 @@
 # Copyright (c) 2020 TytusDb Team
 
 
-from storage import BaseDatos as DB
+from storage.hash import BaseDatos as DB
 import os, shutil
 
 main_path = os.getcwd()+"\\data\\hash"

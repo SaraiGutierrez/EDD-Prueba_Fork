@@ -2,8 +2,8 @@
 # Released under MIT License
 # Copyright (c) 2020 TytusDb Team
 
-from team18 import BPlusMode as Storage
-from team18 import BplusTree
+from storage.bplus import bplus_mode as Storage
+from storage.bplus import BplusTree
 import tkinter
 from tkinter import *
 from tkinter import messagebox

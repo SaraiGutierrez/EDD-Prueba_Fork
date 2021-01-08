@@ -3,8 +3,8 @@
 # Developer:    Andree Avalos
 import os
 import shutil
-from diccionario import Estructura
-from modulo_serializar import rollback, hacerCommit
+from .diccionario import Estructura
+from .modulo_serializar import rollback, hacerCommit
 data = {}
 
 def initCheck():

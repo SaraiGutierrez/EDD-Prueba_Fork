@@ -4,7 +4,7 @@
 
 
 from tkinter import *
-from storage import HashMode as h
+from storage.hash import hash_mode as h
 
 
 def Mostrar():
