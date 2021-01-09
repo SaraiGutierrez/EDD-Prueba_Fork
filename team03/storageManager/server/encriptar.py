@@ -19,4 +19,4 @@ def encriptMessage(message, key):
     x= salida.encrypt(coding).decode()
     return x
 
-print(encriptMessage("hola", "adios"))
+#print(encriptMessage("hola", "adios"))
