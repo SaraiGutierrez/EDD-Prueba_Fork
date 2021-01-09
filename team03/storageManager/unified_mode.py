@@ -8,11 +8,12 @@ from storage.json import json_mode as j
 
 import pickle
 import os
+import hashlib
 
 from storageManager.server import encriptar as enc
 from storageManager.server import desencriptar as des
+from storageManager.server import blockChain as blockC
 from storageManager import indexManager as indexM
-import hashlib 
 
 #############
 # Utilities #
@@ -69,7 +70,7 @@ def createDatabase(database: str, mode: str, encoding="ascii") -> int:
                 or not encoding.isidentifier():
             raise Exception()
 
-        if encoding != "utf8" or encoding != "ascii" or encoding != "iso-8859-1":
+        if encoding != "utf8" and encoding != "ascii" and encoding != "iso-8859-1":
             return 4
 
         # Retorna el diccionario de una base de datos especifica
@@ -109,7 +110,6 @@ def createDatabase(database: str, mode: str, encoding="ascii") -> int:
     except:
         return 1
 
-#   *PROBAR SI TIRA LA EXCEPCION CUANDO NO ESTA CREADO EL data.bin
 def showDatabases() -> list:
     try:
         databases = []
@@ -729,9 +729,9 @@ def insert(database: str, table: str, register: list) -> int:
 
         if res == 0:
             # ************* Modificar *********************
-            nombreST = str(database) + '-' + str(table)
-            if BC.EsUnaTablaSegura(nombreST, _main_path):
-                BC.insertSafeTable(nombreST, register, _main_path)
+            nombreTablaSegura = database + '-' + table
+            if blockC.EsUnaTablaSegura(nombreTablaSegura):
+                blockC.insertSafeTable(nombreTablaSegura, register)
             # ************* Modificar *********************
         return res      
     except:
@@ -766,11 +766,11 @@ def loadCSV(filepath: str, database: str, table: str) -> list:
         elif mode == "dict":
             res = d.loadCSV(filepath, database, table)
 
-        nombreST = str(database) + '-' + str(table)
-        if res == 0:
+        if 0 in res:
+            nombreTablaSegura = database + '-' + table
             # ************* Modificar *********************
-            if BC.EsUnaTablaSegura(nombreST, _main_path):
-                BC.insertCSV(nombreST, filepath, _main_path, res)
+            if blockC.EsUnaTablaSegura(nombreTablaSegura):
+                blockC.insertCSV(nombreTablaSegura, filepath, res)
             # ************* Modificar *********************
         return res 
     except:
@@ -797,13 +797,13 @@ def extractRow(database: str, table: str, columns: list) -> list:
         elif mode == "bplus":
             res = bplus.extractRow(database, table, columns)
         elif mode == "hash":
-            res = hash.extractRow(database, table, columns)
+            res = ha.extractRow(database, table, columns)
         elif mode == "isam":
             res = isam.extractRow(database, table, columns)
         elif mode == "json":
-            res = json.extractRow(database, table, columns)
+            res = j.extractRow(database, table, columns)
         elif mode == "dict":
-            res = dict.extractRow(database, table, columns)
+            res = d.extractRow(database, table, columns)
 
         return res
     except:
@@ -826,8 +826,8 @@ def update(database: str, table: str, register: dict, columns: list) -> int:
         # Fase2
         # ************* Modificar *********************
         datosAntiguos = False
-        nombreST = str(database) + '-' + str(table)
-        if BC.EsUnaTablaSegura(nombreST, _main_path):
+        nombreTablaSegura = database + '-' + table
+        if blockC.EsUnaTablaSegura(nombreTablaSegura):
             datosAntiguos = extractRow(database, table, columns)
         # ************* Modificar *********************
 
@@ -853,7 +853,7 @@ def update(database: str, table: str, register: dict, columns: list) -> int:
         if res == 0:
             # ************* Modificar *********************
             if datosAntiguos:
-               BC.updateSafeTable(nombreST, datosAntiguos, extractRow(database, table, columns), _main_path)
+               blockC.updateSafeTable(nombreTablaSegura, datosAntiguos, extractRow(database, table, columns))
             # ************* Modificar *********************        
         return res
     except:
@@ -1353,3 +1353,102 @@ def decrypt(cipherBackup: str, password: str) -> str:
     except:
         return 1   #ocurrio un error o clave invalida
 
+##############
+# BLOCKCHAIN #
+##############
+
+def safeModeOn(database: str, table: str) -> int:
+    try:
+        if not database.isidentifier() \
+        or not table.isidentifier():
+            raise Exception() 
+
+        if not __getDatabase(database):
+            return 2
+
+        if not __getTable(database, table):
+            return 3
+
+        nombreTablaSegura = database + '-' + table
+        if blockC.EsUnaTablaSegura(nombreTablaSegura):
+            return 4
+
+        blockC.CreateBlockChain(nombreTablaSegura)
+        return 0
+    except:
+        return 1
+
+def safeModeOff(database: str, table: str) -> int:
+    try:
+        if not database.isidentifier() \
+        or not table.isidentifier():
+            raise Exception()
+
+        if not __getDatabase(database):
+            return 2
+
+        if not __getTable(database, table):
+            return 3
+
+        nombreTablaSegura = database + '-' + table
+        if not blockC.EsUnaTablaSegura(nombreTablaSegura):
+            return 4
+
+        blockC.DeleteSafeTable(nombreTablaSegura)
+        return 0
+    except:
+        return 1
+
+def GraphSafeTable(database: str, table: str) -> int:
+    try:
+        if not database.isidentifier() \
+        or not table.isidentifier():
+            raise Exception()
+        
+        nombreTablaSegura = database + '-' + table
+        blockC.GraphSafeTable(nombreTablaSegura)
+
+        return 0
+    except:
+        return 1
+
+
+def graphDSD(database: str) -> int:
+    """Graphs a database ERD
+
+        Pararameters:\n
+            database (str): name of the database
+
+        Returns:\n
+            0: successful operation
+            None: non-existent database, an error ocurred
+    """
+
+    db = __getDatabase(database)
+
+    if db:
+        return graph.graphDSD(database)
+
+    else:
+        return None
+
+
+def graphDF(database: str, table: str) -> int:
+    """Graphs a table s functional dependencies
+
+        Pararameters:\n
+            database (str): name of the database
+            table (str): name of the table
+
+        Returns:\n
+            0: successful operation
+            None: non-existent database, an error ocurred
+    """
+
+    db = _database(database)
+
+    if db:
+        return graph.graphDF(database,table)
+
+    else:
+        return None
