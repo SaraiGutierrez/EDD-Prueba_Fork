@@ -8,6 +8,7 @@ from storage.json import json_mode as j
 
 import pickle
 import os
+import zlib
 import hashlib
 
 from storageManager.server import encriptar as enc
@@ -18,6 +19,10 @@ from storageManager import indexManager as indexM
 #############
 # Utilities #
 #############
+
+#Variable que valida si el deserializado esta activo
+global deserializadoActivado
+deserializadoActivado = False
 
 # GUARDAR ARCHIVO
 def __commit(objeto, nombre):
@@ -99,12 +104,13 @@ def createDatabase(database: str, mode: str, encoding="ascii") -> int:
             return 2
 
         if estado == 0:
-            # Pedir la lista de diccionarios de base de datos
-            listaDB = __rollback("data")
-            listaDB.append({"nameDb": database, "mode": mode,
-                           "encoding": encoding, "tables": []})
-            # Se guarda la nueva base de datos en el archivo data
-            __commit(listaDB, "data")
+            if deserializadoActivado is False:
+                # Pedir la lista de diccionarios de base de datos
+                listaDB = __rollback("data")
+                listaDB.append({"nameDb": database, "mode": mode,
+                                "encoding": encoding, "tables": []})
+                # Se guarda la nueva base de datos en el archivo data
+                __commit(listaDB, "data")
 
         return estado
     except:
@@ -265,7 +271,9 @@ def __createTable(database, table, numberColumns, mode):
                 db["tables"].append({"nameTb": table, "mode": mode, "columns": numberColumns, "pk": [],
                                     "foreign_keys": indexM.indexManager(mode, database, table, 5, "fk"),
                                     "unique_index": indexM.indexManager(mode, database, table, 3, "un"),
-                                    "index": indexM.indexManager(mode, database, table, 3, "in")})
+                                    "index": indexM.indexManager(mode, database, table, 3, "in"),
+                                    "registros": [], "registrosFk": [], "registrosUn": [], "registrosIn": [],
+                                    "Bandera": False})
                 break
 
         # Se guarda la lista de base de datos ya actualizada en el archivo data
@@ -392,18 +400,19 @@ def alterAddPK(database: str, table: str, columns: list) -> int:
             estado = d.alterAddPK(database, table, columns)
 
         if estado == 0:
-            # Pedir la lista de diccionarios de base de datos
-            listaDB = __rollback("data")
+            if deserializadoActivado is False:
+                # Pedir la lista de diccionarios de base de datos
+                listaDB = __rollback("data")
 
-            for db in listaDB:
-                if db["nameDb"] == database:
-                    for tb in db["tables"]:
-                        if tb["nameTb"] == table:
-                            tb["pk"] = columns
-                            break
+                for db in listaDB:
+                    if db["nameDb"] == database:
+                        for tb in db["tables"]:
+                            if tb["nameTb"] == table:
+                                tb["pk"] = columns
+                                break
 
-            # Se guarda la lista de base de datos ya actualizada en el archivo data
-            __commit(listaDB, "data")
+                # Se guarda la lista de base de datos ya actualizada en el archivo data
+                __commit(listaDB, "data")
 
         return estado
     except:
@@ -728,11 +737,25 @@ def insert(database: str, table: str, register: list) -> int:
             res = d.insert(database, table, register)
 
         if res == 0:
-            # ************* Modificar *********************
-            nombreTablaSegura = database + '-' + table
-            if blockC.EsUnaTablaSegura(nombreTablaSegura):
-                blockC.insertSafeTable(nombreTablaSegura, register)
-            # ************* Modificar *********************
+            if deserializadoActivado is False:
+                nombreTabla = database + '_' + table
+                if blockC.existeSeguridad(nombreTabla):
+                    blockC.insertarRegistrosSeguros(nombreTabla, register)
+
+            #Se extraen los registros actualizados de la estructura
+            registros = extractTable(database, table)
+            #Se guardan en el archivo data
+            listaDB = __rollback("data")
+            for db in listaDB:
+                if db["nameDb"] == database:
+                    for tb in db["tables"]:
+                        if tb["nameTb"] == table:
+                            tb["registros"] = registros
+                            break
+                
+            #Se guarda la lista de base de datos actualizada en el archivo data
+            __commit(listaDB, "data")
+
         return res      
     except:
         return 1
@@ -767,11 +790,24 @@ def loadCSV(filepath: str, database: str, table: str) -> list:
             res = d.loadCSV(filepath, database, table)
 
         if 0 in res:
-            nombreTablaSegura = database + '-' + table
-            # ************* Modificar *********************
-            if blockC.EsUnaTablaSegura(nombreTablaSegura):
-                blockC.insertCSV(nombreTablaSegura, filepath, res)
-            # ************* Modificar *********************
+            nombreTabla = database + '_' + table
+            if blockC.existeSeguridad(nombreTabla):
+                blockC.insertarCSV(nombreTabla, filepath, res)
+            
+            #Se extraen los registros actualizados de la estructura
+            registros = extractTable(database, table)
+            #Se guardan en el archivo data
+            listaDB = __rollback("data")
+            for db in listaDB:
+                if db["nameDb"] == database:
+                    for tb in db["tables"]:
+                        if tb["nameTb"] == table:
+                            tb["registros"] = registros
+                            break
+                
+            #Se guarda la lista de base de datos actualizada en el archivo data
+            __commit(listaDB, "data")
+
         return res 
     except:
         return []
@@ -805,6 +841,21 @@ def extractRow(database: str, table: str, columns: list) -> list:
         elif mode == "dict":
             res = d.extractRow(database, table, columns)
 
+        if res:
+            #Se extraen los registros actualizados de la estructura
+            registros = extractTable(database, table)
+            #Se guardan en el archivo data
+            listaDB = __rollback("data")
+            for db in listaDB:
+                if db["nameDb"] == database:
+                    for tb in db["tables"]:
+                        if tb["nameTb"] == table:
+                            tb["registros"] = registros
+                            break
+                
+            #Se guarda la lista de base de datos actualizada en el archivo data
+            __commit(listaDB, "data")
+
         return res
     except:
         return []
@@ -823,13 +874,11 @@ def update(database: str, table: str, register: dict, columns: list) -> int:
         if tabla is False:
             return 3
 
-        # Fase2
-        # ************* Modificar *********************
-        datosAntiguos = False
-        nombreTablaSegura = database + '-' + table
-        if blockC.EsUnaTablaSegura(nombreTablaSegura):
-            datosAntiguos = extractRow(database, table, columns)
-        # ************* Modificar *********************
+        # Si la tabla esta en modo seguro se extrae la tupla a actualizar
+        tuplaParaActualizar = []
+        nombreTabla = database + '_' + table
+        if blockC.existeSeguridad(nombreTabla):
+            tuplaParaActualizar = extractRow(database, table, columns)
 
         mode = tabla["mode"]
 
@@ -851,10 +900,24 @@ def update(database: str, table: str, register: dict, columns: list) -> int:
             res = d.update(database, table, register, columns)
 
         if res == 0:
-            # ************* Modificar *********************
-            if datosAntiguos:
-               blockC.updateSafeTable(nombreTablaSegura, datosAntiguos, extractRow(database, table, columns))
-            # ************* Modificar *********************        
+            if tuplaParaActualizar:
+                tuplaActualizada = extractRow(database, table, columns)
+                blockC.actualizarTablaSegura(nombreTabla, tuplaParaActualizar, tuplaActualizada)
+
+            #Se extraen los registros actualizados de la estructura
+            registros = extractTable(database, table)
+            #Se guardan en el archivo data
+            listaDB = __rollback("data")
+            for db in listaDB:
+                if db["nameDb"] == database:
+                    for tb in db["tables"]:
+                        if tb["nameTb"] == table:
+                            tb["registros"] = registros
+                            break
+                
+            #Se guarda la lista de base de datos actualizada en el archivo data
+            __commit(listaDB, "data") 
+
         return res
     except:
         return 1
@@ -891,6 +954,21 @@ def delete(database: str, table: str, columns: list) -> int:
             res = j.delete(database, table, columns)
         elif mode == "dict":
             res = d.delete(database, table, columns)
+
+        if res == 0:
+            #Se extraen los registros actualizados de la estructura
+            registros = extractTable(database, table)
+            #Se guardan en el archivo data
+            listaDB = __rollback("data")
+            for db in listaDB:
+                if db["nameDb"] == database:
+                    for tb in db["tables"]:
+                        if tb["nameTb"] == table:
+                            tb["registros"] = registros
+                            break
+                
+            #Se guarda la lista de base de datos actualizada en el archivo data
+            __commit(listaDB, "data")
 
         return res
     except:
@@ -929,6 +1007,21 @@ def truncate(database: str, table: str) -> int:
         elif mode == "dict":
             res = d.truncate(database, table)
 
+        if res == 0:
+            #Se extraen los registros actualizados de la estructura
+            #registros = extractTable(database, table)
+            #Se guardan en el archivo data
+            listaDB = __rollback("data")
+            for db in listaDB:
+                if db["nameDb"] == database:
+                    for tb in db["tables"]:
+                        if tb["nameTb"] == table:
+                            tb["registros"] = []
+                            break
+                
+            #Se guarda la lista de base de datos actualizada en el archivo data
+            __commit(listaDB, "data")
+
         return res       
     except:
         return 1
@@ -965,20 +1058,22 @@ def alterDatabaseMode(database: str, mode: str) -> int:
                 if len(tablas) != 0:
                     
                     for nombreTb in tablas:
-                        newdata.append([nombreTb, extractTable(database, nombreTb)])                          ##### EXTRACTTABLE
-                
+                        for d in bdata.get("tables"):
+                            if nombreTb == d.get("nameTb"):
+                                newdata.append([nombreTb,d.get("columns"),d.get("pk"), extractTable(database, nombreTb)])
+
                 # se elimina la base de datos 
                 dropDatabase(database)   
                 # se crea la nueva base de datos en el modo respectivo                                                       ##### DROPDATABASE
                 createDatabase(database , mode, bdata["encoding"])
 
                 for t in newdata:
-                    createTable(database, __getTable(database, t[0]).get("nameTb"), __getTable(database, t[0]).get("columns"))   #### _table             ##### CREATETABLE
-                    alterAddPK(database , __getTable(database, t[0]).get("nameTb"), __getTable(database, t[0]).get("pk"))                      ##### ALTERADDPK
+                    createTable(database, t[0],t[1])    
+                    alterAddPK(database ,t[0],t[2])
 
                     # INSERTAR LOS REGISTROS EN LA NUEVA ESTRUCTURA
-                    for reg in newdata[1]:
-                        insert(database, __getTable(database, t[0]).get("nameTb"), reg)                   ##### INSERT 
+                    for reg in t[3]:
+                        insert(database, t[0], reg) 
                 
                 return 0
             else:
@@ -1059,13 +1154,27 @@ def alterTableAddFK(database: str, table: str, indexName: str, columns: list,  t
                     #tablarf  = t.get("nameTb")
             
             # se comprueba la existencia de las tablas
-            if tablafk != False or tablarf != False:
+            if len(tablafk) == 0 or len(tablarf) == 0: #tablafk != False or tablarf != False:
                 return 3
             # cantidad entre columns y columnsRef
             if len(columns) != len(columnsRef):
                 return 4
             # se agrega la llave foranea
             tablafk["foreign_keys"].insert([indexName, table, tableRef, columns, columnsRef])
+
+            #Se extraen los registros actualizados de la estructura Fk
+            registrosFk = tablafk["foreign_keys"].extractTable()
+            #Se guardan en el archivo data
+            listaDB = __rollback("data")
+            for db in listaDB:
+                if db["nameDb"] == database:
+                    for tb in db["tables"]:
+                        if tb["nameTb"] == table:
+                            tb["registrosFk"] = registrosFk
+                            break
+                
+            #Se guarda la lista de base de datos actualizada en el archivo data
+            __commit(listaDB, "data")
             return 0
         else:
             return 2
@@ -1095,6 +1204,20 @@ def alterTableDropFK(database: str, table: str, indexName: str) -> int:
             
             if ForaneKey:
                 val = tabla["foreign_keys"].delete(indexName)
+
+                #Se extraen los registros actualizados de la estructura Fk
+                registrosFk = tabla["foreign_keys"].extractTable()
+                #Se guardan en el archivo data
+                listaDB = __rollback("data")
+                for db in listaDB:
+                    if db["nameDb"] == database:
+                        for tb in db["tables"]:
+                            if tb["nameTb"] == table:
+                                tb["registrosFk"] = registrosFk
+                                break
+                    
+                #Se guarda la lista de base de datos actualizada en el archivo data
+                __commit(listaDB, "data")
                 return val   # valor esperado: 0
             else:
                 return 4
@@ -1120,6 +1243,20 @@ def alterTableAddUnique(database: str, table: str, indexName: str, columns: list
                 return 3
             # se agrega el indice a la clase de indices
             tabla["unique_index"].insert([indexName, table, columns])
+
+            #Se extraen los registros actualizados de la estructura Un
+            registrosUn = tabla["unique_index"].extractTable()
+            #Se guardan en el archivo data
+            listaDB = __rollback("data")
+            for db in listaDB:
+                if db["nameDb"] == database:
+                    for tb in db["tables"]:
+                        if tb["nameTb"] == table:
+                            tb["registrosUn"] = registrosUn
+                            break
+                
+            #Se guarda la lista de base de datos actualizada en el archivo data
+            __commit(listaDB, "data")
             return 0
         else:
             return 2
@@ -1146,6 +1283,20 @@ def alterTableDropUnique(database: str, table: str, indexName: str) -> int:
             
             if unique_index:
                 val = tabla["unique_index"].delete(indexName)
+
+                #Se extraen los registros actualizados de la estructura Unique
+                registrosUn = tabla["unique_index"].extractTable()
+                #Se guardan en el archivo data
+                listaDB = __rollback("data")
+                for db in listaDB:
+                    if db["nameDb"] == database:
+                        for tb in db["tables"]:
+                            if tb["nameTb"] == table:
+                                tb["registrosUn"] = registrosUn
+                                break
+                    
+                #Se guarda la lista de base de datos actualizada en el archivo data
+                __commit(listaDB, "data")
                 return val    # valor esperado: 0
             else:
                 return 4
@@ -1168,6 +1319,20 @@ def alterTableAddIndex(database: str, table: str, indexName: str, columns: list)
                 return 3
             # se agrega el indice a la clase de indices
             tabla["index"].insert([indexName, table, columns])
+
+            #Se extraen los registros actualizados de la estructura Index
+            registrosIn = tabla["index"].extractTable()
+            #Se guardan en el archivo data
+            listaDB = __rollback("data")
+            for db in listaDB:
+                if db["nameDb"] == database:
+                    for tb in db["tables"]:
+                        if tb["nameTb"] == table:
+                            tb["registrosIn"] = registrosIn
+                            break
+                
+            #Se guarda la lista de base de datos actualizada en el archivo data
+            __commit(listaDB, "data")
             return 0
         else:
             return 2
@@ -1191,6 +1356,20 @@ def alterTableDropIndex(database: str, table: str, indexName: str) -> int:
             
             if index:
                 val = tabla["index"].delete(indexName)
+
+                #Se extraen los registros actualizados de la estructura Index
+                registrosIn = tabla["index"].extractTable()
+                #Se guardan en el archivo data
+                listaDB = __rollback("data")
+                for db in listaDB:
+                    if db["nameDb"] == database:
+                        for tb in db["tables"]:
+                            if tb["nameTb"] == table:
+                                tb["registrosIn"] = registrosIn
+                                break
+                    
+                #Se guarda la lista de base de datos actualizada en el archivo data
+                __commit(listaDB, "data")
                 return val    # valor esperado: 0
             else:
                 return 4
@@ -1213,15 +1392,18 @@ def alterDatabaseEncoding(database: str, encoding: str) -> int:
         #si el encoding enviado esta en la codificaciones
         if  encoding in codificaciones:
             try:
-    ######################### FALTA TERMINAR    ################################################
                 listaDB = __rollback("data")
                 for db in listaDB:
-                    if db["nameDB"]==database:
+                    if db["nameDb"] == database:
                         db["encoding"]=encoding
                         break
                 
                 #Se guarda la nueva base de datos en el archivo data
-                __commit(listaDB, "data")  
+                __commit(listaDB, "data")
+
+                #################### ENCODING ###################
+
+                #################### ENCODING ###################
                 return 0 #operacion exitosa
             except:
                 return 1 #Error en la operacion
@@ -1353,6 +1535,359 @@ def decrypt(cipherBackup: str, password: str) -> str:
     except:
         return 1   #ocurrio un error o clave invalida
 
+##################
+# COMPRESS CRUD  #
+##################
+
+# auxiliar para la eliminacion de una tabla solo en la estructura
+def __dropTableaux(database: str, table: str) -> int:
+    try:
+        if not database.isidentifier() \
+        or not table.isidentifier():
+            raise Exception()
+
+        baseDatos = __getDatabase(database)
+        if baseDatos is False:
+            return 2
+        
+        tabla = __getTable(database, table)
+        if tabla is False:
+            return 3
+
+        # Fase2
+        mode = tabla["mode"]
+
+        res = 1
+        if mode == "avl":
+            res = avl.dropTable(database, table)
+        elif mode == "b":
+            res = b.dropTable(database, table)
+        elif mode == "bplus":
+            res = bplus.dropTable(database, table)
+        elif mode == "hash":
+            res = ha.dropTable(database, table)
+        elif mode == "isam":
+            res = isam.dropTable(database, table)
+        elif mode == "json":
+            res = j.dropTable(database, table)
+        elif mode == "dict":
+            res = d.dropTable(database, table)
+        return res
+    except:
+        return 1
+
+# funcion auxiliar para crear una tabla en una estructura
+def __createTableaux(database, table, numberColumns, mode):
+    estado = 1
+    if mode == "avl":
+        estado = avl.createTable(database, table, numberColumns)
+    elif mode == "b":
+        estado = b.createTable(database, table, numberColumns)
+    elif mode == "bplus":
+        estado = bplus.createTable(database, table, numberColumns)
+    elif mode == "hash":
+        estado = ha.createTable(database, table, numberColumns)
+    elif mode == "isam":
+        estado = isam.createTable(database, table, numberColumns)
+    elif mode == "json":
+        estado = j.createTable(database, table, numberColumns)
+    elif mode == "dict":
+        estado = d.createTable(database, table, numberColumns)
+        
+def alterDatabaseCompress(database: str, level: int) -> int:
+    try:
+        # se comprueba  que "level" == 0-9
+        if level  in range(10):
+            # llama la base de datos
+            db =  __getDatabase(database) 
+            if db:
+                # se extrae el listado de tablas
+                l_tablas= showTables(database)
+                if l_tablas:
+                    # se almacena en una lista el nombre de la tabla, las columnas de las llaves primarias y sus registros:
+                    data = []
+                    for tb in db.get("tables"):
+                        # se comprueba que el metadato de la tabla sea False (False == no compreso)
+                        if tb.get("Bandera") is False:
+                            data.append([tb.get("nameTb"),tb.get("pk"),extractTable(database,tb.get("nameTb")),tb.get("mode"),tb.get("columns")])
+                        else:
+                            data = []
+                            return 1
+                    # se comprueba que la data no este vacia 
+                    if data:
+                        # se recorre cada  arrgelo de la data [nombreTabla, llave foranea,[data],mode,columns]
+                        ntable =""
+                        mode = ""
+                        columns = 0
+                        for nreg in data:
+                            new_data =[] # almacena el nuevo regigstro con datos compresos
+                            ntable=nreg[0]   #nombre de la tabla 
+                            pk = nreg[1]        # llaves foranas
+                            mode = nreg[3]
+                            columns = nreg[4]
+                            # se comprime cada columna de los registros en la lista new_data:
+                            contador = 0
+                            for old_data in nreg[2]:
+                                # se comprueba si es una llave primaria, no se comprime
+                                if contador in pk:
+                                    new_data.append(old_data)
+                                # se comprueba que el registro sea texto
+                                elif type(old_data) == str:
+                                    compress = zlib.compress(old_data,level).encode("utf-8")
+                                    new_data.append(compress)
+                                else:
+                                    new_data.append(old_data)
+                                contador +=1
+
+                            truncate(database,ntable)
+                            # se elimina la tabla anterior
+                            #__dropTableaux(database,ntable)
+                            # se crea la tabla 
+                            #__createTableaux(database,ntable,columns,mode )
+                            # se inserta los nuevos registros 
+                            insert(database,ntable,new_data)
+                            # se cambia la bandera de compresion a TRUE
+                            for tb in db.get("tables"):
+                                if tb.get("nameTb")== ntable:
+                                    tb["Bandera"]= True   # INCLUIR LA BANDERA DENTRO DE LOS ATRIBUTOS DEL DICCIONARIO
+                                    #print("imprimiendo los registros compresos")
+                                    #print(extractTable(database,ntable))
+                                                                          
+                        # se retorna 0
+                        return 0
+                    else:
+                        return 1
+                else:
+                    return 1
+            else:
+                return 2
+        else:
+            return 3
+    except:
+        return 1
+
+def alterDatabaseDecompress(database: str) -> int:
+    try:
+        # llama la base de datos
+        db =  __getDatabase(database) 
+        if db:
+            # se extrae el listado de tablas
+            l_tablas= showTables(database)
+            if l_tablas:
+                # se almacena en una lista el nombre de la tabla, las columnas de las llaves primarias y sus registros:
+                data = []
+                no_compress=0
+                compres =0
+                for tb in  db.get("tables"):
+                    compres +=1
+                    # se comprueba que el metadato de la tabla sea Verdadero (TRUE == compreso)
+                    if tb.get("Bandera"):
+                        data.append([tb.get("nameTb"),tb.get("pk"),extractTable(database,tb.get("nameTb")),tb.get("mode"),tb.get("columns")])
+                        
+                    else:
+                        no_compress +=1
+                        
+                # se comprueba que todas las tablas esten compresas:
+                if compres !=no_compress:
+                    data = []
+                    return 1
+                # se comprueba que la data no este vacia 
+                if data:
+                    # se recorre cada  arrgelo de la data [nombreTabla, llave foranea,[data],mode,columns]
+                    ntable =""
+                    mode = ""
+                    columns = 0
+                    for nreg in data:
+                        new_data =[] # almacena el nuevo regigstro con datos compresos
+                        ntable=nreg[0]   #nombre de la tabla 
+                        pk = nreg[1]        # llaves foranas
+                        mode = nreg[3]
+                        columns = nreg[4]
+                        # se comprime cada columna de los registros en la lista new_data:
+                        contador = 0
+                        for old_data in nreg[2]:
+                            # se comprueba si es una llave primaria, no se comprime
+                            if contador in pk:
+                                new_data.append(old_data)
+                            # se comprueba que el registro sea texto
+                            elif type(old_data) == bytes:
+                                decompress = zlib.decompress(old_data).decode("utf-8")
+                                new_data.append(decompress)
+                            else:
+                                new_data.append(old_data)
+                            contador +=1
+                        
+                        truncate(database,ntable)
+                        # se elimina la tabla anterior
+                        #__dropTableaux(database,ntable)
+                        # se crea la tabla 
+                        #__createTableaux(database,ntable,columns,mode )
+                        # se inserta los nuevos registros 
+                        insert(database,ntable,new_data)
+                        # se cambia la bandera de compresion a TRUE
+                        for tb in db.get("tables"):
+                            if tb.get("nameTb")== ntable:
+                                tb["Bandera"]= False                # INCLUIR LA BANDERA DENTRO DE LOS ATRIBUTOS DEL DICCIONARIO 
+                                #print("imprimiendo los registros compresos")
+                                #print(extractTable(database,ntable))                                            
+                    # se retorna 0
+                    return 0
+                else:
+                    return 3
+            else:
+                return 1
+        else:
+            return 2
+    except:
+        return 1
+
+def alterTableCompress(database: str, table: str, level: int) -> int:
+    try:
+        # se comprueba  que "level" == 0-9
+        if level  in range(10):
+            # llama la base de datos
+            db =  __getDatabase(database) 
+            if db:
+                # se extrae el listado de tablas
+                l_tablas= showTables(database)
+                if l_tablas:
+                    # se almacena en una lista el nombre de la tabla, las columnas de las llaves primarias y sus registros:
+                    data = []
+                    for tb in db.get("tables"):
+                        # se busca la tabla 
+                        if tb.get("nameTb")== table:
+                            # se comprueba que el metadato de la tabla sea False (False == no compreso)
+                            if tb.get("Bandera") is False:
+                                data.append([tb.get("nameTb"),tb.get("pk"),extractTable(database,tb.get("nameTb")),tb.get("mode"),tb.get("columns")])
+                                break
+                            else:
+                                data = []
+                                return 1
+                        
+                    # se comprueba que la data no este vacia 
+                    if data:
+                        # se recorre cada  arrgelo de la data [nombreTabla, llave foranea,[data],mode,columns]
+                        ntable =""
+                        mode = ""
+                        columns = 0
+                       
+                        for nreg in data:
+                            new_data =[] # almacena el nuevo regigstro con datos compresos
+                            ntable=nreg[0]   #nombre de la tabla 
+                            pk = nreg[1]        # llaves foranas
+                            mode = nreg[3]
+                            columns = nreg[4]
+                            # se comprime cada columna de los registros en la lista new_data:
+                            contador = 0
+                            for old_data in nreg[2]:
+                                # se comprueba si es una llave primaria, no se comprime
+                                if contador in pk:
+                                    new_data.append(old_data)
+                                # se comprueba que el registro sea texto
+                                elif type(old_data) == str:
+                                    compress = zlib.compress(old_data,level).encode("utf-8")
+                                    new_data.append(compress)
+                                else:
+                                    new_data.append(old_data)
+                                contador +=1
+                            truncate(database,ntable)
+                            # se elimina la tabla anterior
+                            #__dropTableaux(database,ntable)
+                            # se crea la tabla 
+                            #__createTableaux(database,ntable,columns,mode )
+                            # se inserta los nuevos registros 
+                            insert(database,ntable,new_data)
+                            # se cambia la bandera de compresion a TRUE
+                            for tb in db.get("tables"):
+                                if tb.get("nameTb")== ntable:
+                                    tb["Bandera"]= True   # INCLUIR LA BANDERA DENTRO DE LOS ATRIBUTOS DEL DICCIONARIO
+                                    #print("imprimiendo los registros compresos")
+                                    #print(extractTable(database,ntable))
+                                                                          
+                        # se retorna 0
+                        return 0
+                    else:
+                        return 3
+                else:
+                    return 1
+            else:
+                return 2
+        else:
+            return 4
+    except:
+        return 1
+
+def alterTableDecompress(database: str, table: str) -> int:
+    try:
+        # llama la base de datos
+        db =  __getDatabase(database) 
+        if db:
+            # se extrae el listado de tablas
+            l_tablas= showTables(database)
+            if l_tablas:
+                # se almacena en una lista el nombre de la tabla, las columnas de las llaves primarias y sus registros:
+                data = []
+                for tb in db.get("tables"):
+                        # se busca la tabla 
+                        if tb.get("nameTb")== table:
+                            # se comprueba que el metadato de la tabla sea True (True ==  compreso)
+                            if tb.get("Bandera"):
+                                data.append([tb.get("nameTb"),tb.get("pk"),extractTable(database,tb.get("nameTb")),tb.get("mode"),tb.get("columns")])
+                                break
+                            else:
+                                return 4
+               
+                # se comprueba que la data no este vacia 
+                if data:
+                    # se recorre cada  arrgelo de la data [nombreTabla, llave foranea,[data],mode,columns]
+                    ntable =""
+                    mode = ""
+                    columns = 0
+                    
+                    
+                    for nreg in data:
+                        new_data =[] # almacena el nuevo regigstro con datos compresos
+                        ntable=nreg[0]   #nombre de la tabla 
+                        pk = nreg[1]        # llaves foranas
+                        mode = nreg[3]
+                        columns = nreg[4]
+                        # se comprime cada columna de los registros en la lista new_data:
+                        contador = 0
+                        for old_data in nreg[2]:
+                            # se comprueba si es una llave primaria, no se comprime
+                            if contador in pk:
+                                new_data.append(old_data)
+                            # se comprueba que el registro sea texto
+                            elif type(old_data) == bytes:
+                                decompress = zlib.decompress(old_data).decode("utf-8")
+                                new_data.append(decompress)
+                            else:
+                                new_data.append(old_data)
+                            contador +=1
+                        truncate(database,ntable)
+                        # se elimina la tabla anterior
+                        #__dropTableaux(database,ntable)
+                        # se crea la tabla 
+                        #__createTableaux(database,ntable,columns,mode )
+                        # se inserta los nuevos registros 
+                        insert(database,ntable,new_data)
+                        # se cambia la bandera de compresion a TRUE
+                        for tb in db.get("tables"):
+                            if tb.get("nameTb")== ntable:
+                                tb["Bandera"]= False                # INCLUIR LA BANDERA DENTRO DE LOS ATRIBUTOS DEL DICCIONARIO 
+                                #print("imprimiendo los registros compresos")
+                                #print(extractTable(database,ntable))                                            
+                    # se retorna 0
+                    return 0
+                else:
+                    return 3
+            else:
+                return 1
+        else:
+            return 2
+    except:
+        return 1
+
 ##############
 # BLOCKCHAIN #
 ##############
@@ -1369,11 +1904,11 @@ def safeModeOn(database: str, table: str) -> int:
         if not __getTable(database, table):
             return 3
 
-        nombreTablaSegura = database + '-' + table
-        if blockC.EsUnaTablaSegura(nombreTablaSegura):
+        nombreTabla = database + '_' + table
+        if blockC.existeSeguridad(nombreTabla):
             return 4
 
-        blockC.CreateBlockChain(nombreTablaSegura)
+        blockC.crearBlockchain(nombreTabla)
         return 0
     except:
         return 1
@@ -1390,65 +1925,196 @@ def safeModeOff(database: str, table: str) -> int:
         if not __getTable(database, table):
             return 3
 
-        nombreTablaSegura = database + '-' + table
-        if not blockC.EsUnaTablaSegura(nombreTablaSegura):
+        nombreTabla = database + '_' + table
+        if not blockC.existeSeguridad(nombreTabla):
             return 4
 
-        blockC.DeleteSafeTable(nombreTablaSegura)
+        blockC.eliminarTablaSegura(nombreTabla)
         return 0
     except:
         return 1
 
-def GraphSafeTable(database: str, table: str) -> int:
-    try:
-        if not database.isidentifier() \
-        or not table.isidentifier():
-            raise Exception()
-        
-        nombreTablaSegura = database + '-' + table
-        blockC.GraphSafeTable(nombreTablaSegura)
-
-        return 0
-    except:
-        return 1
-
+##############
+#   GRAFOS   #
+##############
 
 def graphDSD(database: str) -> int:
-    """Graphs a database ERD
+    try:
+        if not database.isidentifier():
+            raise Exception()
 
-        Pararameters:\n
-            database (str): name of the database
+        baseDatos = __getDatabase(database)
+        if baseDatos is False:
+            return None
 
-        Returns:\n
-            0: successful operation
-            None: non-existent database, an error ocurred
-    """
+        archivo = open('archivo.dot', 'w', encoding='utf-8')
+        archivo.write('digraph structs {\n')
+        archivo.write('rankdir=LR;\n')
+        #archivo.write('node [shape=record];\n')
 
-    db = __getDatabase(database)
+        # nodo [label="nodo"];
+        #print('encabezado')
+        for tb in baseDatos["tables"]:
+            archivo.write( '{0} [label="{0}"];\n'.format(tb["nameTb"]))
 
-    if db:
-        return graph.graphDSD(database)
-
-    else:
+        # enlaces tabla2 -> tabla1
+        #print('enlaces')
+        tabla1 = ''
+        tabla2 = ''
+        for tb in baseDatos["tables"]:
+            tabla1 = tb["nameTb"]     
+            #[indexName, table, tableRef, columns, columnsRef]                               
+            for lista in tb["foreign_keys"].extractTable():
+                tabla2 = lista[2]
+                archivo.write( '{0} -> {1};\n'.format(tabla2, tabla1) )
+        archivo.write("}\n")
+        archivo.close()
+        os.system('dot -Tpng archivo.dot -o graphDSD.png')
+        os.system('graphDSD.png')
+        return 0
+    except:
         return None
-
 
 def graphDF(database: str, table: str) -> int:
-    """Graphs a table s functional dependencies
+    try:
+        if not database.isidentifier() or not table.isidentifier():
+            raise Exception()
 
-        Pararameters:\n
-            database (str): name of the database
-            table (str): name of the table
+        baseDatos = __getDatabase(database)
+        if baseDatos is False:
+            return None
+        
+        tabla = __getTable(database, table)
+        if tabla is False:
+            return None
 
-        Returns:\n
-            0: successful operation
-            None: non-existent database, an error ocurred
-    """
+        archivo = open('archivo.dot', 'w', encoding='utf-8')
+        archivo.write('digraph structs {\n')
+        archivo.write('rankdir=LR;')
+        archivo.write('node [shape=record];\n')
 
-    db = _database(database)
+        list_key = []
+        list_reg = []
 
-    if db:
-        return graph.graphDF(database,table)
+        #[indexName, table, columns]
+        for lista in tabla["unique_index"].extractTable():
+            list_key.append('unique_'+str(lista[0]))
+        
+        primaria = 'primary'
+        for pk in tabla["pk"]: 
+            primaria += '_'+ str(pk)
+        list_key.append(primaria)
+                            # 7             -       4
+        for x in range(int(tabla["columns"] - len(list_key))):
+            list_reg.append("reg_"+str(x+1)) #reg_1, reg_2, reg_3
 
-    else:
+        #list_key = [primary_1, primary_2, unique_1, unique_2]
+        #list_reg = [reg_1, reg_2, reg_3]
+        # nodo[label=""];
+        
+        for x in list_key:
+            archivo.write('{0} [label="{0}"];\n'.format(x))
+            
+        for x in list_reg:
+            archivo.write('{0} [label="{0}"];\n'.format(x))
+        
+        # enlaces
+        # pk -> reg;
+        
+        for x in list_key:
+            for y in list_reg:
+                archivo.write('{0} -> {1};\n'.format(x, y))
+        archivo.write("}\n")
+        archivo.close()
+        os.system('dot -Tpng archivo.dot -o graphDF.png')
+        os.system('graphDF.png')
+        return 0
+    except:
         return None
+
+def deserializar():
+    #Si el archivo binario 'data' no existe no hay nada para deserializar
+    if os.path.exists("data.bin"):
+        #Se activa la bandera serializado
+        global deserializadoActivado
+        deserializadoActivado = True
+
+        #Deserializa el archivo binario 'data' que retorna una lista de diccionarios para las bases de datos
+        diccionariosDb = __rollback("data")
+        #Se recorre cada base de datos obteniendola por su ruta de archivo
+        for db in diccionariosDb:
+            #Capturamos el nombre de la base de datos
+            nombreDb = db["nameDb"]
+            #Se crea la base de datos para tenerla en memoria
+            createDatabase(nombreDb, db["mode"], db["encoding"])
+        
+            #Se recorre cada diccionario tabla dentro de la base de datos especifica
+            diccionariosTb = db["tables"]
+            for tb in diccionariosTb:
+                #Extraer toda la informacion del diccionario de tabla actual
+                nombreTb = tb["nameTb"]
+                modeTb = tb["mode"]
+                columnas = tb["columns"]
+                pk = tb["pk"]
+                registros = tb["registros"]
+                registrosFk = tb["registrosFk"]
+                registrosUn = tb["registrosUn"]
+                registrosIn = tb["registrosIn"]
+                bandera = tb["Bandera"]
+
+
+                # Pedir la lista de diccionarios de base de datos------------------------------------------
+                listaDB = __rollback("data")
+
+                #Se elimina el diccionario correspondiente a la tabla del archivo data
+                for db in listaDB:
+                    if db["nameDb"] == nombreDb:
+                        db["tables"].remove(tb)
+                        break
+
+                # Se guarda la lista de base de datos ya actualizada en el archivo data
+                __commit(listaDB, "data")
+                #------------------------------------------------------------------------------------------
+
+                #Se crea la base de datos en memoria y las instancias de Fk, Un, In
+                __createTable(nombreDb, nombreTb, columnas, modeTb)
+                #Se actualiza la pk
+                alterAddPK(nombreDb, nombreTb, pk)
+
+                #Se insertan los registros de la estructura
+                for tupla in registros:
+                    insert(nombreDb, nombreTb, tupla)
+                
+                #Se insertan lo registros de las llaves foraneas
+                for tupla in registrosFk:
+                    #[indexName, table, tableRef, columns, columnsRef]
+                    alterTableAddFK(nombreDb, tupla[1], tupla[0], tupla[3], tupla[2], tupla[4])
+
+                #Se insertan los registros de las llaves unicas
+                for tupla in registrosUn:
+                    #[indexName, table, columns]
+                    alterTableAddUnique(nombreDb, tupla[1], tupla[0], tupla[2])
+                    
+                #Se insertan los registros de los indices
+                for tupla in registrosIn:
+                    #[indexName, table, columns]
+                    alterTableAddIndex(nombreDb, tupla[1], tupla[0], tupla[2])
+
+                # Pedir la lista de diccionarios de base de datos------------------------------------------
+                listaDB = __rollback("data")
+
+                #Se elimina el diccionario correspondiente a la tabla del archivo data
+                for db in listaDB:
+                    if db["nameDb"] == nombreDb:
+                        for tb in db["tables"]:
+                            if tb["nameTb"] == nombreTb:
+                                tb["Bandera"] = bandera
+                            break
+
+                # Se guarda la lista de base de datos ya actualizada en el archivo data
+                __commit(listaDB, "data")
+                #------------------------------------------------------------------------------------------
+
+        deserializadoActivado = False
+    else:
+        print("No hay archivo data.bin")
