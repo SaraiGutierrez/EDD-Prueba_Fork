@@ -1,0 +1,11 @@
+﻿1,Select Table,Acceso para consulta select
+2,Create Table,Acceso para crear tablas
+3,Update Table,Acceso para update registro
+4,Trigger,Acceso para crear Triggers
+5,Stored Procedure,Acceso para crear Procedimientos Almacenados
+6,Alter Table,Acceso para editar tabla
+7,Truncate,Acceso para borrar registros de tabla
+8,Drop Table,Acceso para eliminar tabla
+9,Insert Table,Acceso para insertar en tabla
+10,Create Database,Acceso para crear nuevas bases de datos
+11,Drop Database,Acceso para eliminar bases de datos
