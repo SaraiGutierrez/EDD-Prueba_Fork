@@ -1,202 +1,194 @@
 import hashlib
 import json as js
 import os
-import subprocess
 
+##############
+# BLOCKCHAIN #
+##############
 
-def GenerarHash(cadena):
-    return hashlib.sha256(cadena.encode()).hexdigest()
-
-
-def DeleteSafeTable(nombreTabla):
-    ruta = "storageSafeTables/" + str(nombreTabla) + ".json"
-    os.remove(ruta)
-
-
-def CreateBlockChain(nombreTabla):
-
-    ruta = "storageSafeTables/" + str(nombreTabla) + ".json"
-    file = open(ruta, "w+")
-    file.write(js.dumps(['inicio']))
-    file.close()
-
-
-def EsUnaTablaSegura(nombreTabla):
-    ruta = "storageSafeTables/" + str(nombreTabla) + ".json"
+def existeSeguridad(nombreTabla):
+    ruta = "storageSafeTables/" + nombreTabla + ".json"
     return os.path.isfile(ruta)
 
-
-def updateSafeTable(nombreTabla, datos, datosmodificados):
-    cadena = ''
-    cadenaModificcada = ''
-    contador = 0
-    ruta = "storageSafeTables/" + str(nombreTabla) + ".json"
-
-    for dato in datos:
-        if contador == len(datos) - 1:
-            cadena += str(dato)
-        else:
-            cadena += (str(dato) + ',')
-        contador += 1
-    contador = 0
-
-    for dato in datosmodificados:
-        if contador == len(datos) - 1:
-            cadenaModificcada += str(dato)
-        else:
-            cadenaModificcada += (str(dato) + ',')
-        contador += 1
-
-    file = open(ruta, "r")
-    lista = js.loads(file.read())
+def crearBlockchain(nombreTabla):
+    ruta = "storageSafeTables/" + nombreTabla + ".json"
+    
+    file = open(ruta, "w+")
+    file.write(js.dumps(['start']))
     file.close()
 
-    for bloque in lista:
-        if cadena == bloque[1]:
-            bloque[1] = cadenaModificcada
-            bloque[3] = GenerarHash(cadenaModificcada)
-            file = open(ruta, "w+")
-            file.write(js.dumps(lista))
-            file.close()
-            return True
-
-
-def insertCSV(nombretabla, rutaArchivo, retornos):
+def insertarCSV(nombretabla, filepath, arregloDeInserciones):
     contador = 0
-    ruta = "storageSafeTables/" + str(nombretabla) + ".json"
+    ruta = "storageSafeTables/" + nombretabla + ".json"
 
     file = open(ruta, "r")
-    lista = js.loads(file.read())
+    listaBloques = js.loads(file.read())
     file.close()
-    id = len(lista) - 1
+    id = len(listaBloques) - 1
 
-    anterior = '000000000000000000'
+    anterior = '000000000000inicial0000000000000'
     if not id == 0:
-        lista.pop()
-        anterior = lista[id-1][3]
+        listaBloques.pop()
+        anterior = listaBloques[id-1][3]
 
-    f = open(rutaArchivo, "r")
-    for linea in f:
+    archivoCSV = open(filepath, "r")
+    for linea in archivoCSV:
         linea = linea.rstrip('\n')
-        if retornos[contador] == 0:
-            h = GenerarHash(linea)
+        if arregloDeInserciones[contador] == 0:
+            hashRegistroActual = __getHash(linea)
             if id == 0:
-                DatosBloque = [0, linea, anterior, h]
-                lista.pop()
+                DatosBloque = [0, linea, anterior, hashRegistroActual]
+                listaBloques.pop()
             else:
-                DatosBloque = [id, linea, anterior, h]
-            anterior = h
-            lista.append(DatosBloque)
+                DatosBloque = [id, linea, anterior, hashRegistroActual]
+            anterior = hashRegistroActual
+            listaBloques.append(DatosBloque)
             id += 1
         contador += 1
 
-    lista.append([45612, 'datofinalParaComprobacionFinal', h, h])
-    f.close()
+    listaBloques.append([1000000, 'final', hashRegistroActual, hashRegistroActual])
+    archivoCSV.close()
     file = open(ruta, "w+")
-    file.write(js.dumps(lista))
+    file.write(js.dumps(listaBloques))
     file.close()
 
-
-def insertSafeTable(nombreTabla, datos):
-    cadena = ''
+def insertarRegistrosSeguros(nombreTabla, registros):
+    cadenaRegistros = ''
     contador = 0
-    ruta = "storageSafeTables/" + str(nombreTabla) + ".json"
+    ruta = "storageSafeTables/" + nombreTabla + ".json"
 
-    for dato in datos:
-        if contador == len(datos) - 1:
+    for dato in registros:
+        if contador == len(registros) - 1:
+            cadenaRegistros += str(dato)
+        else:
+            cadenaRegistros += (str(dato) + ',')
+        contador += 1
+
+    file = open(ruta, "r")
+    listaBloques = js.loads(file.read())
+    file.close()
+
+    id = len(listaBloques)
+    hashRegistroActual = __getHash(cadenaRegistros)
+    if id == 1 and listaBloques[0] == 'start':
+        DatosBloque = [0, cadenaRegistros, '000000000000inicial0000000000000', hashRegistroActual]
+        listaBloques.pop()
+    else:
+        id -= 1
+        DatosBloque = [id, cadenaRegistros, listaBloques[id-1][3], hashRegistroActual]
+        listaBloques.pop()
+    listaBloques.append(DatosBloque)
+    listaBloques.append([1000000, 'final', hashRegistroActual, hashRegistroActual])
+    file = open(ruta, "w+")
+    file.write(js.dumps(listaBloques))
+    file.close()
+
+def eliminarTablaSegura(nombreTabla):
+    ruta = "storageSafeTables/" + nombreTabla + ".json"
+    os.remove(ruta)
+
+def actualizarTablaSegura(nombreTabla, tuplaParaActualizar, tuplaActualizada):
+    cadena = ''
+    cadenaModificada = ''
+    contador = 0
+    ruta = "storageSafeTables/" + nombreTabla + ".json"
+
+    for dato in tuplaParaActualizar:
+        if contador == len(tuplaParaActualizar) - 1:
             cadena += str(dato)
         else:
             cadena += (str(dato) + ',')
         contador += 1
-
-    file = open(ruta, "r")
-    lista = js.loads(file.read())
-    file.close()
-
-    id = len(lista)
-    h = GenerarHash(cadena)
-    if id == 1 and lista[0] == 'inicio':
-        DatosBloque = [0, cadena, '000000000000000000', h]
-        lista.pop()
-    else:
-        id -= 1
-        DatosBloque = [id, cadena, lista[id-1][3], h]
-        lista.pop()
-    lista.append(DatosBloque)
-    lista.append([45612, 'datofinalParaComprobacionFinal', h, h])
-    file = open(ruta, "w+")
-    file.write(js.dumps(lista))
-    file.close()
-
-
-def GraphSafeTable(nombreTabla):
-    ruta = "storageSafeTables/" + str(nombreTabla) + ".json"
-    file = open(ruta, "r")
-    lista = js.loads(file.read())
-    file.close()
-
-    file = open('BlockChain.dot', "w")
-    file.write("graph grafica{" + os.linesep)
-    file.write("rankdir=LR;" + os.linesep)
     contador = 0
-    correcta = True
 
-    def subComillas(cadenaDatos):
+    for dato in tuplaActualizada:
+        if contador == len(tuplaParaActualizar) - 1:
+            cadenaModificada += str(dato)
+        else:
+            cadenaModificada += (str(dato) + ',')
+        contador += 1
+
+    file = open(ruta, "r")
+    listaBloques = js.loads(file.read())
+    file.close()
+
+    for bloque in listaBloques:
+        if cadena == bloque[1]:
+            bloque[1] = cadenaModificada
+            bloque[3] = __getHash(cadenaModificada)
+            file = open(ruta, "w+")
+            file.write(js.dumps(listaBloques))
+            file.close()
+            break
+    
+def reporteBlockchain(database, table):
+    try:
+        if not database.isidentifier() \
+        or not table.isidentifier():
+            raise Exception()
+        
+        nombreTabla = database + '_' + table
+
+        ruta = "storageSafeTables/" + nombreTabla + ".json"
+
+        if os.path.exists(ruta):
+            file = open(ruta, "r")
+            listaBloques = js.loads(file.read())
+            file.close()
+
+            file = open('Bc.dot', "w")
+            file.write("digraph g{\n")
+            file.write("rankdir=LR\n")
+
+            file.write(__getDot(listaBloques))
+
+            file.write('}')
+            file.close()
+
+            os.system('dot -Tpng Bc.dot -o Bc.png')
+            os.system('Bc.png')
+        else:
+            return 1
+
+        return 0
+    except:
+        return 1
+
+def __getDot(listaBloques):
+    listaBloques = listaBloques
+
+    dot = ""
+    contador = 0
+    hash_Correcto = True
+
+    def replaceComillas(cadenaDatos):
         sinComillas = cadenaDatos.replace('"', "'")
         return sinComillas
-        
-    for bloque in lista:
-        if correcta:
-            if contador == len(lista)-1:
+    
+    for bloque in listaBloques:
+        if hash_Correcto:
+            if contador == len(listaBloques)-1:
                 pass
-            elif bloque[3] == lista[contador + 1][2]:
-                file.write('bloque' + str(
-                    contador) + ' [shape=record, style=bold,style=filled,fillcolor=lightblue,label="ID:\\n' + str(
-                    bloque[0]) + ' | DATOS:\\n' + subComillas(str(bloque[1])) + ' | ANTERIOR:\\n' + str(
-                    bloque[2]) + ' | HASH:\\n' + str(bloque[3]) + '"];' + os.linesep)
+            elif bloque[3] == listaBloques[contador + 1][2]:
+                dot += 'bloque' + str(contador) + ' [shape=record, style=filled, fillcolor=green, label="Block #:\\n' + str(bloque[0]) + ' | Data:\\n' + replaceComillas(str(bloque[1])) + ' | Prev:\\n' + str(bloque[2]) + ' | Hash:\\n' + str(bloque[3]) + '"];\n'
             else:
-                file.write('bloque' + str(
-                    contador) + ' [shape=record, style=bold,style=filled,fillcolor=pink,label="ID:\\n' + str(
-                    bloque[0]) + ' | DATOS:\\n' + subComillas(str(bloque[1])) + ' | ANTERIOR:\\n' + str(
-                    bloque[2]) + ' | HASH:\\n' + str(bloque[3]) + '"];' + os.linesep)
-                correcta = False
+                dot += 'bloque' + str(contador) + ' [shape=record, style=filled, fillcolor=red, label="Block #:\\n' + str(bloque[0]) + ' | Data:\\n' + replaceComillas(str(bloque[1])) + ' | Prev:\\n' + str(bloque[2]) + ' | Hash:\\n' + str(bloque[3]) + '"];\n'
+                hash_Correcto = False
         else:
-            if not contador == len(lista)-1:
-                file.write('bloque' + str(
-                   contador) + ' [shape=record, style=bold,style=filled,fillcolor=pink,label="ID:\\n' + str(
-                   bloque[0]) + ' | DATOS:\\n' + subComillas(str(bloque[1])) + ' | ANTERIOR:\\n' + str(
-                   bloque[2]) + ' | HASH:\\n' + str(bloque[3]) + '"];' + os.linesep)
+            if not contador == len(listaBloques)-1:
+                dot += 'bloque' + str(contador) + ' [shape=record, style=filled,fillcolor=red, label="Block #:\\n' + str(bloque[0]) + ' | Data:\\n' + replaceComillas(str(bloque[1])) + ' | Prev:\\n' + str(bloque[2]) + ' | Hash:\\n' + str(bloque[3]) + '"];\n'
 
         contador += 1
 
-    for i in range(len(lista) - 2):
-        if not i == len(lista)-1:
-            file.write('bloque' + str(i) + ' -- bloque' + str(i + 1) + os.linesep)
+    for i in range(len(listaBloques) - 2):
+        if not i == len(listaBloques)-1:
+            dot += 'bloque' + str(i) + ' -> bloque' + str(i + 1) + "\n"
 
-    file.write('}')
-    file.close()
-    subprocess.call('dot -Tpng BlockChain.dot -o BlockChain.png')
-    os.system('BlockChain.png')
+    return dot
 
-'''
-GraphSafeTable('prueba', rutita)
+#############
+# Utilities #
+#############
 
-if EsUnaTablaSegura('animales', rutita):
-    updateSafeTable('animales', [sdf,fsfsd,sdfa], [fs,gaf,fsf], rutita)
-else:
-    print('No es una tabla segura')
-
-input('stop')
-
-if EsUnaTablaSegura('prueba', rutita):
-    updateSafeTable('prueba', [5, 'pedro4', '201901526'], [6, 'JuanMecanico', 'TodoBien'], rutita)
-else:
-    print('No es una tabla segura')
-
-GraphSafeTable('prueba', rutita)
-
-if EsUnaTablaSegura('prueba', rutita):
-    insertSafeTable('prueba', [89, 'este', 'DatoNuevo'], rutita)
-else:
-    print('No es una tabla segura')
-'''
+def __getHash(cadena):
+    return hashlib.sha256(cadena.encode()).hexdigest()

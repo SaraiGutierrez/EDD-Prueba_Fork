@@ -16,9 +16,26 @@ class indexManager:
         self.table = table + self.type
         self.columnas = columns
         
+        self.createDatabase()
         self.createTable()
 
-    
+    def createDatabase(self):
+
+        if self.modo == "avl":
+            avl.createDatabase(self.database)
+        elif self.modo == "b":
+            b.createDatabase(self.database)
+        elif self.modo == "bplus":
+            bplus.createDatabase(self.database)
+        elif self.modo == "hash":
+            ha.createDatabase(self.database)
+        elif self.modo == "isam":
+            isam.createDatabase(self.database)
+        elif self.modo == "json":
+            j.createDatabase(self.database)
+        elif self.modo == "dict":
+            d.createDatabase(self.database)
+
     def createTable(self):
     
         if self.modo == "avl":

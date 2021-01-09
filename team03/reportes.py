@@ -1,33 +1,33 @@
 from storageManager import unified_mode as um
+from storageManager.server import blockChain as blockC
 import time
 
 #inicio = time.time()
 
 #Area para crear bases de datos
 print("Estado BD:",um.createDatabase("BD1", "avl"))#Sistema de Asignaciones
-'''
 print("Estado BD:",um.createDatabase("BD2", "bplus"))#Sistema de Compras de productos
 print("Estado BD:",um.createDatabase("BD3", "isam"))#Sistema de Accesos de usuario para una base de datos
 print("Estado BD:",um.createDatabase("BD4", "avl"))#Sistema de Peliculas y Series para una pagina web
-print("Estado BD:",um.showDatabases())#Nos deberia mostrar todas las bases de datos
-'''
+#print("Estado BD:",um.showDatabases())#Nos deberia mostrar todas las bases de datos
+
 #Area para crear tablas
-'Creamos Tablas Estudiante, Periodo, Año, Asignacion, Curso, Asignacion_Curso'
+#'Creamos Tablas Estudiante, Periodo, Año, Asignacion, Curso, Asignacion_Curso'
 print("---------Creamos Tabla Estudiante---------")
 print("Estado Tabla:",um.createTable("BD1","Estudiante",8))
 print("Estado PKS:",um.alterAddPK("BD1","Estudiante",[0]))
 
 print(um.safeModeOn("BD1","Estudiante"))
 print("Estado Inserts",um.loadCSV("./BD1/Estudiantes.csv","BD1","Estudiante"))
-print(um.GraphSafeTable("BD1", "Estudiante"))
+print(blockC.reporteBlockchain("BD1", "Estudiante"))
 
 #PRUEBA BLOCKCHAIN
-#print(um.safeModeOff("BD1","Estudiante"))
+#print(um.safeModeOn("BD1","Estudiante"))
 #print(um.insert("BD1", "Estudiante", [1191564,"Inadin","Garcia",29,"magnadin@eleifendnon.ca",4182896,"Serbia","Oaxaca"]))
 #print(um.insert("BD1", "Estudiante", [119156,"Lore","Garcia",30,"lore@eleifendnon.ca",4182897,"Tucan","Chivas"]))
 #print(um.insert("BD1", "Estudiante", [119157,"Lorena","Garcia",31,"lorena@eleifendnon.ca",4182898,"Toluca","Tolima"]))
 #print(um.insert("BD1", "Estudiante", [119158,"Bety","Garcia",32,"bety@eleifendnon.ca",4182899,"Puebla","Monterrey"]))
-#print(um.GraphSafeTable("BD1", "Estudiante"))
+#print(blockC.reporteBlockchain("BD1", "Estudiante"))
 #print(um.update("BD1", "Estudiante", {1:"LoreM", 2:"GarciaM"}, [119157]))
 
 
